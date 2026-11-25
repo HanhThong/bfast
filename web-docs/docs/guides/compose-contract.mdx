@@ -1,0 +1,285 @@
+---
+title: The Docker Compose contract
+---
+
+# The Docker Compose contract
+
+This page says exactly what BFAST runs for an [environment](./environments.mdx), and what your
+compose file must look like for several environments to run side by side.
+
+## What BFAST runs
+
+Start, Stop and Delete run in the environment's folder: the worktree for a ticket, the
+workspace folder for the master environment.
+
+| Action | Command |
+|---|---|
+| Probe | `docker compose version` |
+| Start | `docker compose -p <project> <files> up -d --build --force-recreate` |
+| Stop | `docker compose -p <project> <files> down` |
+| Delete | `docker compose -p <project> <files> down --volumes --remove-orphans` |
+| Status | `docker compose ls --all --format json` |
+| Containers | `docker compose -p <project> ps --all --format json` |
+| Log | `docker logs --follow --tail <logTail> <container id>` |
+
+- `<project>` is `bfast-<ticket id>` in lower case with dots replaced — `ST-1.2` becomes
+  `bfast-st-1-2` — or `bfast-master-<workspace-slug>` for the master environment.
+- `<files>` is one `--file` flag for `environments.composeFile` (default
+  `docker-compose.yml`), then one per entry of `environments.composeOverrides`, in order. Later
+  files override earlier ones. Every file must exist in the worktree.
+
+Delete removes containers, networks and volumes, but not the images the builds produced. Prune
+those with `docker image prune -a` when they pile up.
+
+## The variables your stack receives
+
+Start, Stop and Delete receive your normal environment plus:
+
+| Variable | Example | Meaning |
+|---|---|---|
+| One per name in `environments.portVariables` | `FRONTEND_PORT=20000` | A free port, allocated once when the environment is created |
+| `BFAST_TICKET_ID` | `ST-1.2` | The ticket. **Empty** for the master environment. |
+| `BFAST_PROJECT_NAME` | `bfast-st-1-2` | The compose project. Unique per stack. |
+
+The port names are yours. BFAST attaches no meaning to them, with one exception: the **main
+port** — the first in the list, or the one `environments.mainPort` names — is the URL a
+developer opens, and is listed first in the sidebar. The `BFAST_` prefix is reserved.
+
+A shell variable beats a `.env` file in Compose, so BFAST's values always win.
+
+## Two facts behind every rule
+
+1. **Several environments run at once** — same compose file, different project names and
+   ports. Anything with a fixed global name or port collides.
+2. **Start is always from scratch** (`--build --force-recreate`). Anything worth keeping lives
+   in a named volume, and anything that seeds data must be safe to run twice.
+
+## Step by step: adapt an existing compose file
+
+Start from the compose file your team already runs with `docker compose up`. The example is
+a shop whose file began with fixed ports and a fixed container name:
+
+```yaml title="docker-compose.yml — before"
+services:
+  web:
+    image: nginx:1.27-alpine
+    container_name: shop-web
+    ports:
+      - "8080:80"
+    volumes:
+      - ./public:/usr/share/nginx/html:ro
+  api:
+    image: node:22-alpine
+    command: node api/server.js
+    ports:
+      - "3000:3000"
+```
+
+1. **List the host ports.** Every `ports:` entry's left-hand side is one. Here: `8080` (the
+   shop) and `3000` (the API).
+2. **Give each one a variable name** and replace the number with `${NAME:?}`. The
+   container-side port stays literal.
+3. **Delete `container_name:`** and any top-level `name:`.
+4. **Check the paths.** Every bind mount must be relative and inside the repository, and every
+   file it reads must be committed.
+5. **Enter the names in BFAST**: Settings → **Environments** → **Port variables**
+   `WEB_PORT, API_PORT`, **Main port** `WEB_PORT`, then **Save**.
+
+   ![Settings → Environments with the two port variables](/img/screens/env-settings.png)
+
+6. **Verify by hand** with the commands under [Verify by hand](#verify-by-hand) — twice, then
+   `down`.
+7. **Commit** the compose file and `.vscode/bfast.json`, then
+   [create an environment](./environments.mdx#step-by-step-your-first-environment).
+
+```yaml title="docker-compose.yml — after"
+services:
+  web:
+    image: nginx:1.27-alpine
+    ports:
+      - "${WEB_PORT:?}:80"
+    volumes:
+      - ./public:/usr/share/nginx/html:ro
+  api:
+    image: node:22-alpine
+    working_dir: /app
+    command: node api/server.js
+    environment:
+      API_PORT: "3000"
+    ports:
+      - "${API_PORT:?}:3000"
+    volumes:
+      - ./api:/app/api:ro
+```
+
+Two environments of this file then run at once, each under its own project and ports —
+`bfast-st-1-2` on 20000/20001 and the master environment on 20002/20003:
+
+```text
+$ docker compose ls
+NAME                    STATUS       CONFIG FILES
+bfast-master-acme-shop  running(2)   ~/src/acme-shop/docker-compose.yml
+bfast-st-1-2            running(2)   /tmp/bfast-worktrees/acme-shop/ST-1.2/docker-compose.yml
+```
+
+![Master and ST-1.2 running side by side in the Environments section](/img/screens/env-master.png)
+
+## Rules
+
+### Publish host ports through variables only
+
+```yaml
+    ports:
+      - "${FRONTEND_PORT:?set by BFAST}:80"
+```
+
+- Prefer `:?`. A variable missing from `portVariables` then fails at once with its name. With
+  `:-default`, every environment silently falls back to the same port, and the second one
+  collides.
+- Never hard-code a host port. `"5432:5432"` on the database is the classic mistake. The
+  container-side port stays literal.
+
+### Publish only what the host needs
+
+Services talk to each other by **service name and internal port** —
+`postgres://app:app@db:5432/app` — which needs no published port. Publish only what is reached
+from your machine: the frontend, an API the browser calls directly, the database if you use a
+GUI client.
+
+If the **browser** calls the backend, it does so through the host port. Pass it in:
+
+```yaml
+    environment:
+      API_URL: "http://localhost:${BACKEND_PORT:?}"
+```
+
+### Keep environments isolated
+
+- **No `container_name:`.** Fixed names collide. Compose's generated names are unique.
+- **No top-level `name:`.** `-p` overrides it, and leaving it in misleads readers.
+- **Named volumes only, never `external: true`.** A named volume is prefixed with the project
+  name, so isolation is free.
+- **No absolute paths and no bind mounts outside the repository.** The worktree lives
+  elsewhere, and a path that works in your main checkout points at nothing there.
+- **Everything the compose file reads must be committed.** A worktree has no gitignored files
+  and no initialised submodules.
+- **Prefer named volumes to writable bind mounts.** On Linux, a root container writing into a
+  bind mount leaves root-owned files in the worktree. Delete copes, but data belongs in
+  volumes.
+
+### Survive a rebuild on every start
+
+- Make database seeds and migrations idempotent.
+- Give every service that another depends on a **healthcheck**, and depend with
+  `condition: service_healthy`.
+- The health command must exist inside the image. Slim images often have no `curl`.
+
+## Reference compose file
+
+For `"portVariables": ["FRONTEND_PORT", "BACKEND_PORT", "DB_PORT"]`:
+
+```yaml title="docker-compose.yml"
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "${FRONTEND_PORT:?set by BFAST}:80"
+    environment:
+      API_URL: "http://localhost:${BACKEND_PORT:?}"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  backend:
+    build: ./backend
+    ports:
+      - "${BACKEND_PORT:?}:8080"
+    environment:
+      DATABASE_URL: "postgres://app:app@db:5432/app"   # service name + internal port
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  db:
+    image: postgres:16
+    ports:
+      - "${DB_PORT:?}:5432"          # published only for host-side tools
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    volumes:
+      - db-data:/var/lib/postgresql/data          # named → project-prefixed → isolated
+      - ./db/init:/docker-entrypoint-initdb.d:ro  # runs only on an empty volume
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -h 127.0.0.1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  db-data:
+```
+
+```json title=".vscode/bfast.json"
+{
+  "environments": {
+    "portVariables": ["FRONTEND_PORT", "BACKEND_PORT", "DB_PORT"],
+    "portRangeStart": 20000,
+    "portRangeEnd": 20999
+  }
+}
+```
+
+## Other topologies
+
+| Topology | `portVariables` | Main port |
+|---|---|---|
+| A frontend and several backends | `["FRONTEND_PORT", "AUTH_PORT", "ORDERS_PORT", "DB_PORT"]` | `FRONTEND_PORT` |
+| One reverse proxy as the only entry point | `["WEB_PORT"]` | `WEB_PORT` |
+| Classic three-tier | `["FRONTEND_PORT", "BACKEND_PORT", "DB_PORT"]` | `FRONTEND_PORT` |
+
+With a reverse proxy, the proxy is the only service with `ports:`. Adding a service changes
+the proxy's config, never `bfast.json`.
+
+## Layering overrides
+
+Use `composeOverrides` to keep environment-only tweaks out of a compose file the team also
+uses elsewhere:
+
+```json
+"environments": {
+  "composeFile": "docker-compose.yml",
+  "composeOverrides": ["docker-compose.bfast.yml"]
+}
+```
+
+## Checklist
+
+- [ ] Every host port is `${VAR:?}` and every `VAR` is in `environments.portVariables`
+- [ ] The main port is the URL a developer would open
+- [ ] No `container_name:`, no top-level `name:`
+- [ ] No hard-coded host port anywhere, the database included
+- [ ] No `external:` volumes or networks; no absolute or out-of-repo bind mounts
+- [ ] Services reach each other by service name, not `localhost:<port>`
+- [ ] Healthchecks on anything depended on
+- [ ] Seeds and migrations survive a second start
+
+## Verify by hand
+
+Run what BFAST will run. If this works twice in a row, the file satisfies the contract.
+
+```bash
+export FRONTEND_PORT=20000 BACKEND_PORT=20001 DB_PORT=20002
+export BFAST_TICKET_ID=ST-1.2 BFAST_PROJECT_NAME=bfast-test
+
+docker compose -p bfast-test --file docker-compose.yml config
+docker compose -p bfast-test --file docker-compose.yml up -d --build --force-recreate
+docker compose -p bfast-test --file docker-compose.yml up -d --build --force-recreate
+docker compose -p bfast-test --file docker-compose.yml down --volumes --remove-orphans
+```

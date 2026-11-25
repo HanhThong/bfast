@@ -1,0 +1,5 @@
+<!-- codicon "search", in a fixed mid-tone so it sits legibly on a light and a
+     dark tab bar alike. A WebviewPanel draws its icon as a picture and ignores
+     ThemeColor, so this has to be a file — the same constraint media/ticket/
+     exists for. -->
+<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="#8a8a8a"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.29 3.291-1.06 1.06-3.29-3.29zM11.5 7a4.499 4.499 0 1 1-8.997 0A4.499 4.499 0 0 1 11.5 7z"/></svg>

@@ -1,0 +1,103 @@
+---
+title: Commands
+---
+
+# Commands reference
+
+Every BFAST command, and where to find it. Commands in the **palette** appear under the
+`BFAST:` prefix (`Ctrl+Shift+P` / `Cmd+Shift+P`). Commands that act on one row are only on that
+row's right-click menu, because they need to know which row.
+
+BFAST defines no keyboard shortcuts. Bind any palette command yourself in **Keyboard
+Shortcuts**.
+
+## Tickets
+
+| Command | Where | Does |
+|---|---|---|
+| **New Epic** | Tickets title bar, palette | Creates a top-level epic |
+| **New Sub-epic** | Right-click an epic | Creates an epic inside an epic |
+| **New Story** | Right-click an epic | Creates a story |
+| **New Acceptance Criterion** | Right-click a story | Creates a criterion |
+| **New Test Case** | Right-click an epic, a story or a criterion | Creates a test case |
+| **Generate Stories…** | Right-click an epic | [AI breakdown](../guides/generate.mdx) |
+| **Generate Acceptance Criteria…** | Right-click a story | AI breakdown |
+| **Generate Test Cases…** | Right-click a criterion | AI breakdown |
+| **Set Status…** | Right-click a ticket | Changes the status |
+| **Rename…** | Right-click a ticket | Changes the title |
+| **Change Type to Story** | Right-click an epic | Converts a sub-epic, keeping its number. Refused for a top-level epic. |
+| **Change Type to Epic** | Right-click a story | Converts it, keeping its number |
+| **Link to Ticket…** | Right-click a ticket | [Links it to another ticket](../guides/tickets.mdx#link-tickets) |
+| **Set Service…** | Right-click a test case | [Runs it with a service's command](../guides/run-tests.mdx#services) |
+| **Reveal in File Explorer** | Right-click a ticket | Opens the ticket's folder |
+| **Delete…** | Right-click a ticket | Deletes the ticket and everything under it |
+| **Run Tests** | Right-click a ticket | [Runs its test cases](../guides/run-tests.mdx) |
+| **Implement…** | Right-click a ticket | [Hands it to a coding agent](../guides/implement.mdx) |
+| **Commit Ticket…** | Right-click a ticket | [Commits its files](../guides/tickets.mdx#commit-tickets) |
+| **Create Environment** | Right-click an epic or a story | [Creates its environment](../guides/environments.mdx) |
+| **Filter Tickets** | Tickets title bar, palette | Filters the tree |
+| **Clear Ticket Filter** | Tickets title bar, palette | Removes the filter |
+| **Hide Test Cases** / **Show Test Cases** | Tickets title bar, palette | [Hides or shows test case rows](../guides/tickets.mdx#hide-test-cases) |
+| **Refresh Tickets** | Tickets title bar, palette | Re-reads settings and tracker |
+| **Open Board** | Tickets title bar, palette | Returns to the last board |
+| **Shorten Long Ticket Folder Names** | Tickets **…** menu, palette | Renames over-long folders |
+| **Open Settings** | Tickets title bar, palette | Opens the settings form |
+
+## AI
+
+| Command | Where | Does |
+|---|---|---|
+| **New agent** | Palette, settings form | Creates a role under `.bfast/agents/` |
+| **Edit an agent** | Palette | Opens a role file |
+| **Set AI API key** | Palette | Stores an Anthropic API key in secret storage |
+| **Set AI OAuth token** | Palette | Stores a Claude Code OAuth token |
+| **Clear AI credentials** | Palette | Removes both |
+
+## Environments
+
+| Command | Where | Does |
+|---|---|---|
+| **New Environment…** | Environments title bar, palette | Picks a ticket (or Master) and creates its environment |
+| **Create Master Environment** | Palette, empty section | Creates the workspace's own environment |
+| **Refresh Environments** | Environments title bar, palette | Re-reads status |
+| **Start Environment** | Environment row | Starts the stack |
+| **Stop Environment** | Environment row | Stops the stack |
+| **Open in New Window** | Right-click an environment | Opens the worktree |
+| **Reveal Environment in File Explorer** | Right-click an environment | Opens the worktree folder |
+| **Forward Ports** | Right-click an environment | Forwards all its ports |
+| **Run Scan** | Right-click an environment | [Scans the worktree](../guides/code-quality.mdx) |
+| **Delete Environment…** | Right-click an environment | Removes stack, volumes and worktree |
+| **Open Port in VS Code** | Port row | Opens the port in Simple Browser |
+| **Open Port in Browser** | Right-click a port | Opens it in the system browser |
+| **Forward Port** | Right-click a port | Forwards that one port |
+| **Open Container Log** | Container row | Follows the container's log |
+
+## Code Quality
+
+| Command | Where | Does |
+|---|---|---|
+| **Deploy Scan Server** | Code Quality title bar, palette | Deploys, starts and provisions SonarQube |
+| **Scan Workspace** | Code Quality title bar, palette | Scans the workspace |
+| **Refresh Code Quality** | Code Quality title bar, palette | Re-reads status |
+| **Start Scan Server** | Server row | Starts the server |
+| **Stop Scan Server** | Server row | Stops the server |
+| **Re-provision Scan Credentials** | Right-click the server, palette | Re-checks and renews tokens |
+| **Open Scan Server in Browser** | Server or endpoint row | Opens the SonarQube UI |
+| **Show SonarQube admin password** | Right-click the server | Shows the generated password |
+| **Reveal Scan Folder in File Explorer** | Right-click the server | Opens the server's folder |
+| **Remove Scan Server…** | Right-click the server | Destroys server, data and credentials |
+| **Set SonarQube Token** | Credentials row, palette | Stores a token |
+| **Copy Scan Credential…** | Credentials row, palette | Copies a token or the password |
+| **Clear scan credentials** | Right-click credentials | Removes stored credentials |
+| **Open Scan Results** | A recent run | Reopens that run's results |
+
+## Output channels
+
+When something fails, the error message offers **Show Log**. You can also open these from the
+**Output** panel.
+
+| Channel | Contains |
+|---|---|
+| **BFAST Environments** | git and Docker commands and their output |
+| **BFAST Tests** | Every test command and its output |
+| **BFAST Code Quality** | Server deployment, provisioning and scanner output |

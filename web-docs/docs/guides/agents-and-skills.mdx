@@ -1,0 +1,198 @@
+---
+title: Agents and skills
+---
+
+# Agents and skills
+
+What the AI assistant is told is not hidden in the extension. It is a set of markdown files in
+your workspace, under `.bfast/agents/`. Edit them, commit them, review them in a pull request.
+
+## Two levels
+
+| Level | Answers | Example |
+|---|---|---|
+| **Agent** (a role) | *Who* is writing — voice and standard of evidence | Business Analyst |
+| **Skill** | *What shape* the output has | `write-story`: "As a … I want … So that …" |
+
+A run sends the role, then the skill. The role is the same whatever it writes; the shape of an
+epic, a story and an acceptance criterion differ. Keeping them apart means a change of voice
+is one file.
+
+```text
+.bfast/agents/
+  business-analyst.md                       the role
+  business-analyst/
+    write-epic/
+      SKILL.md                              how this role writes an epic
+      resources/expected-output.md          a worked example shown to the model
+    write-story/…
+    write-acceptance-criterion/…
+    break-down-epic/…
+    design-sequence-diagram/…
+```
+
+Each role has **its own copy** of every skill it uses. Editing Product Owner's `write-epic`
+does not change the Business Analyst's.
+
+![The .bfast/agents folder in the Explorer: one file per role, one folder of skills per role](/img/screens/agents-explorer.png)
+
+## The shipped roles
+
+BFAST seeds five roles into a workspace the first time it reads the agents — when you open the
+settings form or a board.
+
+| Role | Writes |
+|---|---|
+| Business Analyst | epic, story, acceptance criterion |
+| Product Owner | epic, story |
+| Solution Architect | epic, acceptance criterion |
+| QA Lead | acceptance criterion |
+| Test Engineer | test case |
+
+The roles overlap on purpose. The board's agent picker is where you choose between them: it
+lists only the roles that can write the ticket's type.
+
+:::note[Seeding happens once]
+The files are written only when `.bfast/agents/` has **never existed**. If you delete a role,
+BFAST does not bring it back. Delete the whole folder to have everything re-seeded.
+:::
+
+## See your agents
+
+1. Open **Settings** (gear in the Tickets title bar, or **BFAST: Open Settings**).
+2. Open the **AI assistant** tab and scroll to **Agents**.
+
+Each role is a card: its name, the ticket types it writes, its description, an **Edit role**
+button, and one row per skill with an **Edit** button. A **New skill…** button closes each
+card, and **New agent…** sits above the list.
+
+![The agents list in the settings form: each role with its skills and Edit buttons](/img/screens/ai-settings.png)
+
+## Change how a role writes
+
+### Change the voice — edit the role
+
+1. In the agents list, click **Edit role** on the role's card.
+2. The role file — such as `.bfast/agents/business-analyst.md` — opens in an editor.
+3. Change who the role is and what it insists on. Save the file.
+
+![A role file open in the editor](/img/screens/agents-role-file.png)
+
+### Change the shape — edit a skill
+
+1. Click **Edit** on the skill's row, such as **Write story**.
+2. The skill's `SKILL.md` opens. Edit the instruction under the frontmatter and save.
+3. Optionally edit `resources/expected-output.md` beside it — the worked example the model is
+   shown.
+
+![The write-story SKILL.md of the Business Analyst, open in the editor](/img/screens/agents-skill-file.png)
+
+Changes take effect at once. Nothing is cached: the next run re-reads the folder, and every
+open board's agent picker follows.
+
+## The three kinds of skill
+
+| Kind | Folder name starts with | Used by | Produces |
+|---|---|---|---|
+| **write** | `write-` | The board's AI Assistant | One ticket's description |
+| **plan** | `break-down-` | The sidebar's Generate commands | A list of child titles |
+| **design** | `design-` | A board's design tab | One design document |
+
+There is one write skill and one plan skill per ticket type, and one design skill per design
+style. In the settings form, a plan skill's row reads *Proposes the children of epic*.
+
+## A skill file
+
+```md title=".bfast/agents/business-analyst/write-story/SKILL.md"
+---
+name: write-story
+description: A user-story sentence, the behaviour, and the cases that are easy to miss.
+types: story
+---
+
+A story is one shippable change described from the outside — what someone can
+do afterwards that they could not do before.
+…
+```
+
+| Frontmatter key | Meaning |
+|---|---|
+| `name` | Always the folder's name. If they disagree, the folder wins. |
+| `description` | The one sentence shown in the settings form and under the board's agent picker |
+| `types` | The ticket types the skill covers: `epic`, `story`, `ac`, `testcase` |
+| `kind` | `plan` or `design`. Omitted for a write skill. |
+| `style`, `label`, `prefix` | Design skills only — see [Design documents](./design-documents.mdx) |
+
+Everything after the frontmatter is the instruction, sent verbatim. Files in `resources/` are
+included in the prompt as examples.
+
+### Placeholders
+
+A skill can place these tokens where it wants the content. A token the skill leaves out is
+appended automatically, so most skills use none.
+
+| Token | Value |
+|---|---|
+| `{{description}}` | The ticket's current description |
+| `{{instruction}}` | What the user typed |
+| `{{parent}}` | The parent ticket — and, for a test case, the criterion's story too |
+| `{{design}}` | The design document as it stands (design runs) |
+| `{{language}}` | The configured language |
+
+An unknown `{{token}}` is left untouched.
+
+## Create a new role
+
+1. In **Settings → AI assistant**, click **New agent…** above the agents list (or run
+   **BFAST: New agent** from the command palette).
+2. Type the role's name, such as `Security Reviewer`, and press **Enter**.
+
+   ![The New agent prompt asking what the agent is called](/img/screens/agents-new-agent.png)
+
+3. Tick the ticket types the role writes — for example *Story* and *Acceptance criterion* —
+   and confirm.
+4. BFAST creates `.bfast/agents/security-reviewer.md` from a template, copies the shipped
+   write skill for each type you ticked into `security-reviewer/`, and opens the role file.
+   Say who the role is and what it insists on, and save.
+5. Adjust the copied skills to the role, or add more as below.
+
+A role file's own frontmatter:
+
+```md title=".bfast/agents/security-reviewer.md"
+---
+name: Security Reviewer
+description: Reads every ticket for what an attacker would try.
+types: story, ac
+---
+
+You are a security reviewer…
+```
+
+`types` on the role is only a fallback. When the role has a skills folder, what it can write
+is decided by its write skills.
+
+## Give a role a new skill
+
+1. On the role's card, click **New skill…**.
+2. Pick the ticket type the skill writes. Only the types the role has **no** write skill for
+   are offered.
+
+   ![The New skill prompt asking which ticket type the skill writes](/img/screens/agents-new-skill.png)
+
+3. BFAST copies the shipped skill for that type — `SKILL.md` and its `resources/` — into the
+   role's folder and opens it. Adjust it to the role and save.
+
+Plan and design skills are not created here. Every role already uses the shipped plan skills
+when it has none of its own; to customise one, copy its folder into the role. Design skills
+are managed from the **Design** tab — see [Design documents](./design-documents.mdx).
+
+The command palette also has **BFAST: Edit an agent**, which picks a role and opens its file.
+
+## Tips
+
+- **Keep the output contract in the skill.** Each shipped skill ends by telling the model to
+  answer with the description only and not to write files. Keep that line when you edit.
+- **Keep structural keywords in English** if you use `ai.language`, so tickets stay uniform.
+  Each shipped write skill says so under its own `## Structure` heading.
+- **A change everyone should share must be made in each role's copy** of the skill.
+- **One write skill per type per role.** A second one for the same type would never run.

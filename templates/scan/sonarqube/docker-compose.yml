@@ -1,0 +1,88 @@
+# The SonarQube instance BFAST deploys for `scan.mode: "auto"` — one per
+# workspace, under the compose project name `bfast-sonar-<workspace-slug>`.
+#
+# BFAST copies this file into its own scan home at deploy time, so the copy you
+# are looking at there is yours to read and nothing in your repository changes.
+# Replace it with `scan.composeFile`, or layer `scan.composeOverrides` on top;
+# either way the contract in docs/scan/sonarqube.md is what must hold.
+#
+# Adapted from SonarSource's own example
+# (SonarSource/docker-sonarqube, example-compose-files/sq-with-postgres) with
+# five changes, each load-bearing:
+#
+#   - the host port is `${BFAST_SONAR_PORT}`, allocated by BFAST — a literal
+#     would make every link and every status in the sidebar lie
+#   - no `container_name:` and no `hostname:`; upstream has them, and they are
+#     the first thing to delete. A fixed container name collides the moment a
+#     second workspace deploys, and `-p <project>` already makes every object
+#     unique
+#   - no `networks:` block. The default `<project>_default` network is the one
+#     the scanner container joins to reach `http://sonarqube:9000`, which is how
+#     a scan avoids the published port entirely
+#   - postgres publishes no host port: nothing outside this network talks to it
+#   - `stop_grace_period`, because Elasticsearch corrupts its indices when it is
+#     SIGKILLed and compose's default ten seconds is not always enough
+#
+# PostgreSQL rather than the embedded H2, and the reason is not a preference:
+# **H2 data cannot be migrated**, so the first image bump would silently discard
+# every issue, every measure, and the admin password and tokens BFAST
+# provisioned. The cost of the alternative is one container and one volume.
+#
+# There is deliberately **no healthcheck on `sonarqube`**. One would let BFAST
+# use `up -d --wait`, but the readiness answer it actually needs — STARTING vs
+# DB_MIGRATION_NEEDED vs UP — only exists over HTTP, and BFAST has to poll that
+# anyway for external instances. One readiness path, not two.
+#
+# `read_only: true` survives only because of the four named volumes plus the
+# /tmp tmpfs. Drop any one of them in an override and the container dies on an
+# unexplained write.
+#
+# Every volume is named, so compose prefixes it with the project name and two
+# workspaces can never share data. "Remove Scan Server" runs `down --volumes` —
+# treat everything here as disposable.
+
+services:
+  sonarqube:
+    image: sonarqube:community
+    depends_on:
+      db:
+        condition: service_healthy
+    read_only: true
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_temp:/opt/sonarqube/temp
+    tmpfs:
+      - /tmp:size=256M,mode=1777
+    ports:
+      - "${BFAST_SONAR_PORT:?set by BFAST}:9000"
+    stop_grace_period: 1m
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+    volumes:
+      # The parent, not `/data` — upstream's choice, and the one that keeps
+      # working across the postgres 17 to 18 PGDATA move.
+      - postgresql:/var/lib/postgresql
+    healthcheck:
+      # `$$` so compose leaves the substitution to the shell in the container.
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+  sonarqube_temp:
+  postgresql:

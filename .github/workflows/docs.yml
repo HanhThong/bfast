@@ -1,0 +1,166 @@
+name: Docs
+
+# The documentation site (web-docs/): checked and built on every change to it, and deployed to the Cloudflare Worker
+# that serves it as static assets (web-docs/wrangler.jsonc). On master and by hand the build is uploaded as a preview
+# version of the Worker, under an alias named after the branch (<branch>-<worker>.<subdomain>.workers.dev), and never
+# replaces what the site serves; a pull request's build is only checked, since its code is not reviewed yet.
+# release.yml (an extension version) and docs-release.yml (a docs-only version) call this workflow to deploy to
+# production. web-docs/RELEASING.md is the guide.
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - web-docs/**
+      - .github/workflows/docs.yml
+      - .github/workflows/docs-release.yml
+      - .github/workflows/release.yml
+  push:
+    branches: [master]
+    paths:
+      - web-docs/**
+      - .github/workflows/docs.yml
+      - .github/workflows/docs-release.yml
+      - .github/workflows/release.yml
+  # release.yml and docs-release.yml deploy a version this way.
+  workflow_call:
+    inputs:
+      deploy:
+        description: Deploys the build to the Cloudflare Worker.
+        type: boolean
+        default: false
+      production:
+        description: Deploys the build as the version the Worker serves, rather than a preview version.
+        type: boolean
+        default: false
+    outputs:
+      url:
+        description: The address of the deployment.
+        value: ${{ jobs.site.outputs.url }}
+  # By hand (Actions → Docs → Run workflow) on a branch: the site checked, built and deployed as a preview of that branch.
+  workflow_dispatch:
+
+# Only the latest commit counts: a newer push cancels the run of the one it replaces. A release runs under its tag's
+# ref, a group of its own, so a push to master never cancels it.
+concurrency:
+  group: docs-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# No step needs a secret before it deploys, so a pull request from a fork runs the same build.
+permissions:
+  contents: read
+
+env:
+  # The Cloudflare Worker the site deploys to: the repository variable CLOUDFLARE_WORKER_NAME, else wrangler.jsonc's.
+  WORKER_NAME: ${{ vars.CLOUDFLARE_WORKER_NAME || 'bfast' }}
+  # Wrangler 4, for preview aliases (`versions upload --preview-alias`).
+  WRANGLER: wrangler@4
+
+jobs:
+  site:
+    name: Site
+    # Temporarily on a GitHub-hosted runner; restore self-hosted when the runners are back.
+    # runs-on: self-hosted
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      url: ${{ steps.deploy.outputs.deployment-url }}
+    env:
+      # A push to master, a run by hand, or a release. A pull request never deploys.
+      DEPLOY: ${{ inputs.deploy || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    defaults:
+      run:
+        working-directory: web-docs
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      # Exactly as package-lock.json holds them: a lockfile that no longer matches package.json fails here.
+      - name: Install dependencies
+        run: |
+          if npm ci --no-audit --no-fund 2>&1 | tee "$RUNNER_TEMP/install.log"; then
+            exit 0
+          fi
+          if grep -Eq 'ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|ECONNREFUSED|ERR_SOCKET_TIMEOUT' "$RUNNER_TEMP/install.log"; then
+            echo "::error title=Infrastructure failure::The package registry did not answer. Not a docs failure: re-run the failed jobs, no new commit is needed."
+          fi
+          exit 1
+      - name: Typecheck
+        run: npm run typecheck
+      # Where the site is published, the repository's Actions variable DOCS_URL (and DOCS_BASE_URL when it is not served
+      # at the root): canonical links and the sitemap name it. A release refuses to build without it (docs-release.yml);
+      # anything else builds with a warning. onBrokenLinks: 'throw' — a page linking to a page or an anchor that does
+      # not exist fails here.
+      - name: Build
+        env:
+          DOCS_URL: ${{ vars.DOCS_URL }}
+          DOCS_BASE_URL: ${{ vars.DOCS_BASE_URL || '/' }}
+        run: |
+          if [ -z "$DOCS_URL" ]; then
+            echo "::warning title=DOCS_URL is not set::Set the repository variable DOCS_URL (Settings → Secrets and variables → Actions → Variables) to the site's address. The build's canonical links name localhost."
+            unset DOCS_URL
+          fi
+          npm run build
+      # A release replaces what the Worker serves (`wrangler deploy`); anything else uploads a preview version under an
+      # alias named after the branch (`wrangler versions upload`), which the site's own address never serves. Wrangler
+      # writes what it did to WRANGLER_OUTPUT_FILE_PATH, one JSON object per line, which is where the address comes from.
+      - id: deploy
+        if: env.DEPLOY == 'true'
+        name: Deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PRODUCTION: ${{ inputs.production }}
+          REF: ${{ github.ref_name }}
+          DOCS_URL: ${{ vars.DOCS_URL }}
+          WRANGLER_OUTPUT_FILE_PATH: ${{ runner.temp }}/wrangler-output.ndjson
+        run: |
+          message="${REF} ${GITHUB_SHA::7}"
+          if [ "$PRODUCTION" = true ]; then
+            npx --yes "$WRANGLER" deploy --name "$WORKER_NAME" --message "$message"
+          else
+            # An alias is a DNS label: lower case, letters, digits and dashes, short enough beside the Worker's name.
+            # It starts with a letter, hence the prefix on a name that does not.
+            alias=$(echo "$REF" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/^([^a-z])/b-\1/' | cut -c1-30 | sed -E 's/-+$//')
+            npx --yes "$WRANGLER" versions upload --name "$WORKER_NAME" --preview-alias "$alias" --message "$message"
+          fi
+          url=$(node -e '
+            const lines = require("fs").readFileSync(process.argv[1], "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+            const deploy = lines.find((l) => l.type === "deploy");
+            const upload = lines.find((l) => l.type === "version-upload");
+            const url = upload ? upload.preview_alias_url || upload.preview_url : deploy && deploy.targets && deploy.targets[0];
+            if (url) console.log(url.startsWith("http") ? url : "https://" + url);
+          ' "$WRANGLER_OUTPUT_FILE_PATH" || true)
+          # A release is checked at the site's own address, which is what its readers open.
+          if [ "$PRODUCTION" = true ] && [ -n "$DOCS_URL" ]; then url="$DOCS_URL"; fi
+          if [ -z "$url" ]; then
+            echo "::warning title=No address::Wrangler named no address for this deployment, so it is not checked. A preview needs the Worker's workers.dev subdomain and preview URLs switched on (Worker → Settings → Domains & Routes)."
+          fi
+          echo "deployment-url=$url" | tee -a "$GITHUB_OUTPUT"
+      # The deployment as it is served: the landing page, a guide, a screenshot, and a 404 for a page that does not
+      # exist. A fresh deployment can take a few seconds to answer, hence the retries.
+      - if: env.DEPLOY == 'true' && steps.deploy.outputs.deployment-url != ''
+        name: Check the deployment
+        env:
+          URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          check='
+            const base = process.env.URL.replace(/\/$/, "");
+            const expect = { "/": 200, "/docs/intro/": 200, "/docs/guides/tickets/": 200, "/img/logo.svg": 200, "/no-such-page/": 404 };
+            let failed = false;
+            for (const [path, status] of Object.entries(expect)) {
+              const response = await fetch(base + path);
+              console.log(path, response.status);
+              if (response.status !== status) { console.log(`::error title=Deployment check::${path} answered ${response.status}, not ${status}`); failed = true; }
+            }
+            process.exit(failed ? 1 : 0);
+          '
+          for attempt in $(seq 1 6); do
+            node --input-type=module -e "$check" && break
+            if [ "$attempt" = 6 ]; then exit 1; fi
+            sleep 10
+          done
+          {
+            echo "### Docs deployment"
+            echo "- $URL"
+          } >> "$GITHUB_STEP_SUMMARY"

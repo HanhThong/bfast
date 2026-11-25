@@ -1,0 +1,118 @@
+name: Docs release
+
+# Pushing a docs version tag (docs-v1.2.0, or docs-v1.3.0-rc.1 for a pre-release) on a commit of master releases the
+# documentation site: the site is checked and built again on that commit (docs.yml) and deployed to its Cloudflare
+# Worker — as the version the site serves, or as a preview version for a pre-release — and only then is the GitHub
+# Release created.
+# A run that fails before it leaves no Release behind and can be re-run for the same tag.
+# The `docs-` prefix keeps these tags apart from the extension's own `v*` versions.
+#
+# Settings it needs: the repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID, and the repository's
+# Actions variable DOCS_URL, the address the site is published at (DOCS_BASE_URL too when it is not served at the
+# root). web-docs/RELEASING.md is the guide.
+on:
+  push:
+    tags: ['docs-v*']
+
+# One run per version at a time: a second one waits, and never deploys or releases beside the first.
+concurrency:
+  group: docs-release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Version
+    # Temporarily on a GitHub-hosted runner; restore self-hosted when the runners are back.
+    # runs-on: self-hosted
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      # Every branch, to tell whether the tagged commit is on master.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: version
+        name: Check the version, its commit and the settings
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          DOCS_URL: ${{ vars.DOCS_URL }}
+          HAS_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+          HAS_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+        run: |
+          if [[ ! "$TAG" =~ ^docs-v([0-9]+\.[0-9]+\.[0-9]+)(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error title=Not a docs version::$TAG is not docs-v<major>.<minor>.<patch>, as docs-v1.2.0 or docs-v1.3.0-rc.1."
+            exit 1
+          fi
+          version="${TAG#docs-v}"
+          prerelease=$([ -n "${BASH_REMATCH[2]}" ] && echo true || echo false)
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/master; then
+            echo "::error title=Not on master::$TAG names a commit that is not on master."
+            exit 1
+          fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "::error title=Already released::$TAG has a GitHub Release already, which a release never replaces."
+            exit 1
+          fi
+          # A released site names its own address in every canonical link and in the sitemap: never localhost.
+          if [ -z "$DOCS_URL" ]; then
+            echo "::error title=DOCS_URL is not set::Set the repository variable DOCS_URL (Settings → Secrets and variables → Actions → Variables) to the site's address, then re-run."
+            exit 1
+          fi
+          # Checked here, before anything is built, rather than when the deploy step fails.
+          if [ "$HAS_API_TOKEN" != true ] || [ "$HAS_ACCOUNT_ID" != true ]; then
+            echo "::error title=Cloudflare is not set up::Set the repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (Settings → Secrets and variables → Actions → Secrets), then re-run."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+
+  # The site checked and built on the tagged commit itself, then deployed: to production, or to a preview for a
+  # pre-release.
+  site:
+    name: Site and deployment
+    needs: version
+    uses: ./.github/workflows/docs.yml
+    secrets: inherit
+    with:
+      deploy: true
+      production: ${{ needs.version.outputs.prerelease != 'true' }}
+
+  release:
+    name: GitHub Release
+    needs: [version, site]
+    # Temporarily on a GitHub-hosted runner; restore self-hosted when the runners are back.
+    # runs-on: self-hosted
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      # The notes GitHub writes from the pull requests merged since the previous docs version, after the deployment.
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          PRERELEASE: ${{ needs.version.outputs.prerelease }}
+          DEPLOYMENT_URL: ${{ needs.site.outputs.url }}
+          DOCS_URL: ${{ vars.DOCS_URL }}
+        run: |
+          flags=()
+          if [ "$PRERELEASE" = true ]; then flags+=(--prerelease); fi
+          # The notes start at the previous docs version, not at the extension's latest `v*` tag.
+          previous=$(gh api "repos/$GITHUB_REPOSITORY/tags" --paginate --jq '.[].name' \
+            | grep -E '^docs-v[0-9]' | grep -vx "$TAG" | sort -V | tail -n 1 || true)
+          if [ -n "$previous" ]; then flags+=(--notes-start-tag "$previous"); fi
+          if [ "$PRERELEASE" = true ]; then
+            notes="Preview of the documentation site: $DEPLOYMENT_URL"
+          else
+            notes="Documentation site: $DOCS_URL"$'\n\n'"This deployment: $DEPLOYMENT_URL"
+          fi
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "Docs $TAG" \
+            --notes "$notes" --generate-notes "${flags[@]}"

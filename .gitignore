@@ -1,0 +1,14 @@
+out
+dist
+node_modules
+.vscode-test/
+*.vsix
+
+# Scratch trackers and settings the integration tests write into the fixture.
+src/test/fixtures/workspace/.tracker*/
+src/test/fixtures/workspace/.vscode/
+# Opening the settings form seeds the built-in agents; the suite deletes them,
+# but the ignore covers a run that crashed before its teardown.
+src/test/fixtures/workspace/.bfast/
+
+coverage

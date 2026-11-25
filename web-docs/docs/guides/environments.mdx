@@ -1,0 +1,298 @@
+---
+title: Environments
+---
+
+# Environments
+
+An environment is a disposable copy of your application for one story or epic: a
+`git worktree` on the ticket's own branch, running your Docker Compose stack under its own
+project name and its own ports. Several run side by side without colliding.
+
+```text
+ticket ST-1.2  ↔  worktree on branch story/ST-1.2  ↔  compose project bfast-st-1-2
+```
+
+![The Environments section with a running environment, its two ports and two containers](/img/screens/env-running.png)
+
+## Before you start
+
+You need:
+
+- `git`, and a repository with at least one commit — a worktree is a checkout of a commit;
+- `docker` with Compose v2 (`docker compose version` must work in the terminal VS Code
+  starts from);
+- a compose file that takes every host port from a variable. See
+  [The Docker Compose contract](./compose-contract.mdx).
+
+The walkthrough below uses a small shop with two services, `web` (nginx) and `api` (Node):
+
+```yaml title="docker-compose.yml"
+services:
+  web:
+    image: nginx:1.27-alpine
+    ports:
+      - "${WEB_PORT:?}:80"
+    volumes:
+      - ./public:/usr/share/nginx/html:ro
+  api:
+    image: node:22-alpine
+    working_dir: /app
+    command: node api/server.js
+    environment:
+      API_PORT: "3000"
+    ports:
+      - "${API_PORT:?}:3000"
+    volumes:
+      - ./api:/app/api:ro
+```
+
+## Step by step: your first environment
+
+### 1. Name your port variables
+
+1. Open the BFAST settings (gear in the **Tickets** title bar) and select the
+   **Environments** tab.
+2. In **Port variables**, type the variables your compose file reads, separated by commas:
+   `WEB_PORT, API_PORT`. The line under the field confirms what will be allocated.
+3. In **Main port**, pick the port a developer opens — here `WEB_PORT`. Left on *First
+   variable*, it is the first name in the list.
+4. Leave **Port range** (`20000`–`20999`), **Compose file** (`docker-compose.yml`) and
+   **Worktrees folder** empty unless you need something else.
+5. Click **Save**.
+
+![Settings → Environments with WEB_PORT and API_PORT as port variables and WEB_PORT as the main port](/img/screens/env-settings.png)
+
+The result in `.vscode/bfast.json`:
+
+```json
+"environments": {
+  "portVariables": ["WEB_PORT", "API_PORT"],
+  "mainPort": "WEB_PORT"
+}
+```
+
+### 2. Commit
+
+A worktree contains **committed files only**. Commit the compose file, everything it reads
+and `.vscode/bfast.json` before creating an environment:
+
+```bash
+git add docker-compose.yml .vscode/bfast.json
+git commit -m "Run the shop in BFAST environments"
+```
+
+### 3. Create the environment
+
+1. In **Tickets**, right-click a story or an epic — here **ST-2 Sign in with email**.
+2. Choose **Create Environment**.
+
+![The ticket context menu with Create Environment](/img/screens/env-ticket-menu.png)
+
+BFAST allocates one free port per variable, creates the branch `story/ST-1.2` and checks it
+out as a worktree. **Nothing starts yet**: the new row in **Environments** says `Stopped` and
+shows its main port.
+
+![A new environment, stopped, on port 20000](/img/screens/env-stopped.png)
+
+You can also click **+** in the Environments title bar and pick the ticket from a list. The
+list offers every story and epic without an environment, plus **Master** (see
+[below](#the-master-environment)).
+
+![The New Environment picker listing Master and the stories and epics](/img/screens/env-new-pick.png)
+
+### 4. Start it
+
+Hover the row and click **▷ Start Environment** (or right-click → **Start Environment**).
+BFAST runs `docker compose up` in the worktree with the allocated ports. When the row says
+`Running`, expand it:
+
+- one row per **port** — the variable, its number, and `main` on the main port;
+- one row per **container** — its service name and Docker's status.
+
+![A running environment expanded: WEB_PORT 20000 main, API_PORT 20001, api and web containers](/img/screens/env-running.png)
+
+If something fails, the row says `error` and the message offers **Show Log**, which opens the
+**BFAST Environments** output channel with every git and Docker command and its output.
+
+### 5. Open the application
+
+Click the main port row. The page opens in VS Code's **Simple Browser**, next to your code:
+
+![The shop's home page on localhost:20000 in the Simple Browser](/img/screens/env-simple-browser.png)
+
+Right-click a port row to choose the route by name:
+
+![The port context menu: Open Port in VS Code, Open Port in Browser, Forward Port](/img/screens/env-port-menu.png)
+
+- **Open Port in VS Code** — the Simple Browser tab above.
+- **Open Port in Browser** — your system's default browser, with real DevTools.
+- **Forward Port** — for remote windows; see [Ports](#ports).
+
+### 6. Read a container's log
+
+Click a container row (or right-click → **Open Container Log**). The log opens in an editor
+tab and keeps following:
+
+![The web container's log in an editor tab, header showing RUNNING and Following](/img/screens/env-container-log.png)
+
+Exited containers are listed too, which is how you find the service that broke an `error`
+environment. A container that exited with code 0 is a one-shot job that finished (an install, a
+migration) and does not put the environment in `error`. `environments.logTail` sets how many lines of history the tab starts with
+(default 1000).
+
+### 7. Work on the ticket
+
+Right-click the environment → **Open in New Window**. The worktree opens as its own VS Code
+window on branch `story/ST-1.2`, and BFAST opens the ticket's board there once. Commit and
+push from that window as usual.
+
+### 8. Clean up
+
+When the story is merged, right-click the environment → **Delete Environment…**.
+
+:::warning[Delete removes volumes]
+**Delete Environment…** runs `docker compose down --volumes` and removes the worktree folder,
+including uncommitted changes in it. It **keeps the branch**. Commit and push what you want to
+keep first.
+:::
+
+## The Environments section
+
+Each row shows the ticket's id and title, the status and the main port. Before the first
+environment exists, the section explains itself and offers **New Environment** and **Create
+Master Environment** buttons:
+
+![The empty Environments section with New Environment and Create Master Environment buttons](/img/screens/env-empty.png)
+
+| Status | Meaning |
+|---|---|
+| `stopped` | The environment exists; the stack is not running |
+| `running` | Every service is up |
+| `creating`, `starting`, `stopping`, `deleting` | An operation is in flight |
+| `error` | The last operation failed, or only part of the stack is running |
+| `unknown` | Docker cannot be queried |
+
+The title bar has **+** (**New Environment…**) and **Refresh**. Status also refreshes on a
+timer while the section is visible.
+
+## Actions
+
+Right-click an environment:
+
+![The environment context menu: Stop Environment, Open in New Window, Reveal Environment in File Explorer, Forward Ports, Run Scan, Delete Environment](/img/screens/env-menu.png)
+
+| Action | Available | Does |
+|---|---|---|
+| **Start Environment** | `stopped`, `error` | Builds and starts the stack from scratch. Also the inline ▷ button. |
+| **Stop Environment** | `running` | Stops the stack; volumes are kept. Also the inline □ button. |
+| **Open in New Window** | settled states | Opens the worktree in a new VS Code window |
+| **Reveal Environment in File Explorer** | settled states | Opens the worktree folder |
+| **Forward Ports** | any | Forwards every port (remote windows) |
+| **Run Scan** | settled states | Scans the worktree — see [Code quality](./code-quality.mdx) |
+| **Delete Environment…** | settled states | Removes the stack, its volumes and the worktree |
+
+A cancelled or failed operation rolls nothing back. The row shows `error` with the reason,
+and the error message offers **Show Log**.
+
+## Ports
+
+Ports are allocated **once**, when the environment is created, from
+`environments.portRangeStart`–`portRangeEnd`. Two environments never share a port, even while
+one is stopped, so a URL you bookmarked keeps working.
+
+Click a port row to open `http://localhost:<port>` in the Simple Browser; right-click for
+**Open Port in VS Code**, **Open Port in Browser** and **Forward Port**.
+
+In a **remote window** (SSH, WSL, a container), Start forwards every port automatically.
+**Forward Ports** on the environment and **Forward Port** on a port row do it on demand. In a
+local window they only explain that nothing needs forwarding.
+
+## Working in an environment
+
+**Open in New Window** opens the worktree as its own VS Code window. It is a complete BFAST
+workspace — the settings and the tracker are part of the checkout — and BFAST opens the
+ticket's board there once. The Environments section in that window lists every environment of
+the original workspace.
+
+The worktree is a checkout of **committed files only**. Gitignored files such as a local
+`.env` are not there.
+
+## The master environment
+
+Sometimes the code you want running is the code you have open. The **master environment**
+runs the same stack in the **workspace folder itself**: no ticket, no worktree, no new
+branch.
+
+To create it:
+
+1. Click **+** in the Environments title bar and pick **Master** — or run
+   **BFAST: Create Master Environment**, or use the button the empty section shows.
+2. Click **▷ Start Environment** on the **Master** row.
+
+![The Master environment running on ports 20002 and 20003, listed first, above ST-1.2](/img/screens/env-master.png)
+
+- It builds from your live working copy, uncommitted changes and gitignored files included.
+- The row shows the branch currently checked out (`main` above).
+- Its ports come from the same range, so it runs beside ticket environments.
+- Its compose project is `bfast-master-<workspace-slug>`.
+- **Delete** removes the stack and its volumes and never touches your workspace folder.
+- There is at most one per workspace, shown as **Master**, first in the list.
+
+`BFAST_TICKET_ID` is set but empty for the master environment. Key anything per-stack on
+`BFAST_PROJECT_NAME`.
+
+## Where worktrees live
+
+By default, under the operating system's temp folder:
+
+```text
+<os temp>/bfast-worktrees/<workspace-slug>/
+  ST-1.2/          the worktree for ST-1.2, on branch story/ST-1.2
+  EP-1/
+  master.json      the master environment's marker
+```
+
+The temp folder may be cleaned by the OS. To keep worktrees somewhere you control, set
+**Worktrees folder** on the Environments tab (**Browse…** picks one), or edit the file:
+
+```json
+"environments": {
+  "worktreesFolder": "~/bfast-worktrees"
+}
+```
+
+- The path must be absolute or start with `~`, and must be **outside** the workspace.
+- BFAST always adds a `<workspace-slug>` folder beneath it.
+- A folder under your home folder is stored as `~/…`, so the value works for every teammate.
+- Changing the setting moves nothing. Delete environments from the old location first.
+
+## Branches
+
+| Ticket | Branch |
+|---|---|
+| A story `ST-1.2` | `story/ST-1.2` |
+| An epic `EP-1` | `epic/EP-1` |
+
+## The MCP server in an environment
+
+If the workspace has the [MCP server](./mcp-server.mdx) switched on, each new worktree is
+given **its own MCP port**, so its window does not fight the main window for the configured
+one. The worktree's settings file and MCP client files are updated to that port and marked so
+that git does not carry the change back with the branch.
+
+With the MCP server's **settings** function on, an agent can also read and change this
+section's settings — compose files, overrides, port variables — through
+`get_settings` and `update_environment_settings`. See
+[Changing settings over MCP](./mcp-server.mdx#changing-settings-over-mcp).
+
+## Long paths on Windows
+
+A worktree sits deeper than the repository, and Git for Windows refuses paths of 260
+characters or more by default. BFAST passes the long-paths option on its own git commands and,
+when a new worktree needs it, turns on `core.longpaths` for the repository and says so. A short
+worktrees folder such as `D:/wt` still helps other tools.
+
+## Kubernetes
+
+`environments.provider` accepts `k8s` (shown as *Kubernetes (coming soon)* in the form), but
+that provider is a stub today. Docker Compose is the working one.

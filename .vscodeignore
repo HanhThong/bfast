@@ -1,0 +1,41 @@
+.vscode/**
+.vscode-test/**
+src/**
+.gitignore
+.yarnrc
+esbuild.js
+scripts/**
+**/tsconfig.json
+**/eslint.config.mjs
+**/*.map
+**/*.ts
+**/*.tsx
+**/.vscode-test.*
+
+# The compiled test suite has never belonged in a VSIX.
+out/test/**
+
+# The Agent SDK is the one runtime dependency, and it is large. Ship the code
+# it needs and nothing else.
+node_modules/**/test/**
+node_modules/**/tests/**
+node_modules/**/*.md
+node_modules/**/*.map
+node_modules/.bin/**
+
+# The templates/ tree is shipped: AgentStore copies it into .bfast/agents on
+# first use, so a VSIX without it seeds nothing. templates/implement/ ships for
+# the same reason — ImplementPromptStore seeds .bfast/implement from it.
+
+# Coverage output, the lockfiles and the agent-facing docs are dev artefacts:
+# nothing in the extension reads them at runtime.
+coverage/**
+docs/**
+web-docs/**
+CLAUDE.md
+package-lock.json
+pnpm-lock.yaml
+
+# Working notes, not part of the extension.
+refactor-plan.md
+RELEASING.md

@@ -1,0 +1,2955 @@
+/* Every colour comes from a VS Code theme variable so the board follows the
+   user's light/dark theme. The only hard-coded colours are the ticket type
+   badge and status pill, which are white-on-saturated and readable in both. */
+
+html,
+body,
+#root {
+	height: 100%;
+}
+
+body {
+	margin: 0;
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+	color: var(--vscode-foreground);
+	background-color: var(--vscode-editor-background);
+}
+
+.app {
+	height: 100%;
+	overflow: auto;
+}
+
+.empty {
+	margin: 0;
+	padding: 24px 20px;
+	color: var(--vscode-descriptionForeground);
+}
+
+/* ---------- badges ---------- */
+
+.type-badge {
+	flex: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	/* The same height as the status pill, so the meta row reads as one line. */
+	width: 20px;
+	height: 18px;
+	border-radius: 3px;
+	font-size: 9px;
+	font-weight: 700;
+	line-height: 1;
+	color: #ffffff;
+}
+
+.type-epic {
+	background-color: #8250df;
+}
+
+.type-story {
+	background-color: #1a7f37;
+}
+
+.type-ac {
+	background-color: #0969da;
+}
+
+.type-testcase {
+	background-color: #bc4c00;
+}
+
+/* Centred by flexbox rather than by the line box: at this font size the text's
+   own ascent and descent are not symmetrical, so padding alone left it sitting
+   visibly high in the pill. `line-height: 1` takes the line box out of it. */
+.status-pill {
+	display: inline-flex;
+	align-items: center;
+	height: 18px;
+	padding: 0 9px;
+	border-radius: 9px;
+	font-size: 0.85em;
+	line-height: 1;
+	white-space: nowrap;
+	color: #ffffff;
+}
+
+.status-todo {
+	background-color: #6e7781;
+}
+
+.status-in-progress {
+	background-color: #0969da;
+}
+
+.status-in-review {
+	background-color: #9a6700;
+}
+
+.status-done {
+	background-color: #1a7f37;
+}
+
+.status-blocked {
+	background-color: #cf222e;
+}
+
+/* ---------- detail ---------- */
+
+.detail {
+	padding: 16px 20px;
+}
+
+.detail-meta {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	color: var(--vscode-descriptionForeground);
+}
+
+.detail-key {
+	font-family: var(--vscode-editor-font-family);
+	font-weight: 600;
+	color: var(--vscode-foreground);
+}
+
+.detail-title {
+	margin: 8px 0 16px;
+	font-size: 1.5em;
+	font-weight: 600;
+}
+
+.tabs {
+	display: flex;
+	gap: 4px;
+	border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+/* Only the tab buttons scroll. The overflow cannot go on `.tabs` itself: the
+   Edit and AI buttons live there too, held to the right by `margin-left: auto`,
+   and would scroll away with the tabs. `min-width: 0` is what actually lets a
+   flex item shrink below its content. */
+.tabs-scroll {
+	display: flex;
+	gap: 4px;
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow-x: auto;
+	scrollbar-width: thin;
+}
+
+.tab {
+	padding: 6px 12px;
+	white-space: nowrap;
+	font: inherit;
+	color: var(--vscode-descriptionForeground);
+	background: none;
+	border: none;
+	border-bottom: 2px solid transparent;
+	cursor: pointer;
+}
+
+.tab:hover {
+	color: var(--vscode-foreground);
+}
+
+.tab.active {
+	color: var(--vscode-foreground);
+	border-bottom-color: var(--vscode-focusBorder);
+}
+
+.tab-count {
+	padding: 0 5px;
+	border-radius: 8px;
+	font-size: 0.85em;
+	background-color: var(--vscode-badge-background);
+	color: var(--vscode-badge-foreground);
+}
+
+.tab-panel {
+	padding-top: 16px;
+}
+
+/* Several notices as one block: one row per ticket the run touched. */
+.detail-notice-list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-bottom: 12px;
+}
+
+.detail-notice-list p {
+	margin: 0;
+}
+
+/* ---------- design tabs ---------- */
+
+/* Pinned beside the actions rather than at the end of the scroller, where ten
+   design tabs would push it off screen. */
+.tab-add {
+	position: relative;
+	flex: 0 0 auto;
+	align-self: center;
+}
+
+.tab-add-button {
+	display: inline-flex;
+	align-items: center;
+	padding: 6px 8px;
+	border-radius: 3px;
+}
+
+.tab-add-button[aria-expanded='true'] {
+	color: var(--vscode-foreground);
+	background-color: var(--vscode-toolbar-hoverBackground, transparent);
+}
+
+/* Drawn as a menu, with the menu's own palette: this is a popover the editor
+   owns, not a form embedded in the page. */
+.tab-add-menu {
+	position: absolute;
+	right: 0;
+	top: 100%;
+	z-index: 10;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	width: 320px;
+	margin-top: 6px;
+	padding: 10px;
+	color: var(--vscode-menu-foreground, var(--vscode-foreground));
+	background-color: var(--vscode-menu-background, var(--vscode-editorWidget-background));
+	border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, var(--vscode-panel-border)));
+	border-radius: 6px;
+	box-shadow: 0 4px 16px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.35));
+}
+
+.tab-add-heading {
+	font-size: 0.8em;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--vscode-descriptionForeground);
+}
+
+.tab-add-styles {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	max-height: 220px;
+	margin: 0;
+	padding: 0;
+	overflow-y: auto;
+	list-style: none;
+}
+
+.tab-add-style {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	padding: 6px 8px;
+	font: inherit;
+	text-align: left;
+	color: inherit;
+	background: none;
+	border: 1px solid transparent;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.tab-add-style:hover {
+	background-color: var(--vscode-list-hoverBackground);
+}
+
+.tab-add-style.is-selected {
+	color: var(--vscode-list-activeSelectionForeground, var(--vscode-foreground));
+	background-color: var(--vscode-list-activeSelectionBackground);
+}
+
+.tab-add-style:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.tab-add-style-label {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.tab-add-style-prefix,
+.design-prefix {
+	padding: 0 6px;
+	border-radius: 8px;
+	font-family: var(--vscode-editor-font-family, monospace);
+	font-size: 0.85em;
+	color: var(--vscode-badge-foreground);
+	background-color: var(--vscode-badge-background);
+}
+
+.tab-add-style.is-selected .tab-add-style-prefix {
+	color: inherit;
+	background-color: rgba(127, 127, 127, 0.35);
+}
+
+.tab-add-input {
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.tab-add-actions {
+	display: flex;
+	gap: 6px;
+	justify-content: flex-end;
+}
+
+/* ---------- settings: design styles ---------- */
+
+.design-prefix {
+	margin-left: 6px;
+}
+
+.design-parts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.settings-actions-row {
+	display: flex;
+	gap: 8px;
+	margin-top: 10px;
+}
+
+.design-header {
+	margin-bottom: 12px;
+}
+
+.design-meta {
+	display: flex;
+	gap: 8px;
+	align-items: baseline;
+	color: var(--vscode-descriptionForeground);
+	font-size: 0.9em;
+}
+
+.design-id {
+	font-family: var(--vscode-editor-font-family, monospace);
+}
+
+.design-title-row {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+}
+
+.design-title {
+	margin: 2px 0 0;
+	font-size: 1.3em;
+}
+
+.design-actions {
+	display: flex;
+	gap: 6px;
+	margin-left: auto;
+}
+
+.design-rename {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	margin-top: 4px;
+}
+
+.design-rename .input {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+/* The diagram a mermaid fence renders into. It is a block of its own rather
+   than a `pre`, so it centres and can scroll sideways when the graph is wide. */
+.mermaid-diagram {
+	overflow-x: auto;
+	margin: 12px 0;
+	padding: 12px;
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 4px;
+	background-color: var(--vscode-editor-background);
+	text-align: center;
+}
+
+.mermaid-diagram svg {
+	max-width: 100%;
+	height: auto;
+}
+
+/* A diagram that will not parse: the message, then the source, so the fence is
+   still editable and the reason is visible without leaving the tab. */
+.mermaid-error {
+	margin: 12px 0;
+	border: 1px solid var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground));
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.mermaid-error-message {
+	margin: 0;
+	padding: 8px 12px;
+	color: var(--vscode-inputValidation-errorForeground, var(--vscode-errorForeground));
+	background-color: var(--vscode-inputValidation-errorBackground, transparent);
+	font-size: 0.9em;
+}
+
+.mermaid-error pre {
+	margin: 0;
+	border: none;
+	border-radius: 0;
+}
+
+/* No width cap: the board is an editor tab and can be as wide as the user made
+   it, so the description follows the pane instead of leaving the right-hand
+   two-thirds of a wide window empty. Wide content (tables, code, images) is
+   held in check individually below. */
+.description {
+	margin: 0;
+	line-height: 1.55;
+}
+
+/* ---------- linked tickets ---------- */
+
+.links {
+	margin-top: 24px;
+	padding-top: 12px;
+	border-top: 1px solid var(--vscode-panel-border);
+}
+
+.links-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.links-title {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	font-size: 1em;
+	font-weight: 600;
+}
+
+.links-add {
+	margin-left: auto;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.links-empty {
+	margin: 0;
+	color: var(--vscode-descriptionForeground);
+}
+
+.links-group + .links-group {
+	margin-top: 10px;
+}
+
+.links-relation {
+	margin: 0 0 4px;
+	font-size: 0.85em;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--vscode-descriptionForeground);
+}
+
+.links-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.link-row {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	border-radius: 3px;
+}
+
+.link-row:hover {
+	background-color: var(--vscode-list-hoverBackground);
+}
+
+/* A button reset to look like a row: the whole line opens the other board. */
+.link-open {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 6px;
+	border: none;
+	background: none;
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.link-open:focus-visible,
+.link-remove:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.link-row.missing .link-open {
+	cursor: default;
+	color: var(--vscode-disabledForeground);
+}
+
+.link-id {
+	flex: none;
+	font-family: var(--vscode-editor-font-family);
+	font-size: 0.9em;
+	color: var(--vscode-textLink-foreground);
+}
+
+.link-row.missing .link-id {
+	color: inherit;
+	text-decoration: line-through;
+}
+
+.link-title {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.link-remove {
+	flex: none;
+	width: 22px;
+	height: 22px;
+	padding: 0;
+	border: none;
+	border-radius: 3px;
+	background: none;
+	color: var(--vscode-descriptionForeground);
+	font-size: 1.1em;
+	line-height: 1;
+	cursor: pointer;
+	visibility: hidden;
+}
+
+.link-row:hover .link-remove,
+.link-remove:focus-visible {
+	visibility: visible;
+}
+
+.link-remove:hover {
+	color: var(--vscode-errorForeground);
+	background-color: var(--vscode-toolbar-hoverBackground);
+}
+
+/* ---------- rendered markdown ---------- */
+
+/* No `white-space: pre-wrap` here any more: the markdown parser owns the line
+   breaks now, and it is configured with `breaks: true` so a single newline
+   still shows up as one, the way a plain-text description used to. */
+
+/* With no width cap, an unbroken run of characters — a long url, or the kind of
+   keyboard-mash a draft ticket collects — would be the one thing able to push
+   the pane wider than the window. */
+.markdown {
+	overflow-wrap: break-word;
+	min-width: 0;
+}
+
+.markdown > :first-child {
+	margin-top: 0;
+}
+
+.markdown > :last-child {
+	margin-bottom: 0;
+}
+
+.markdown p {
+	margin: 0 0 1em;
+}
+
+.markdown h2,
+.markdown h3,
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+	margin: 1.4em 0 0.5em;
+	line-height: 1.3;
+}
+
+.markdown ul,
+.markdown ol {
+	margin: 0 0 1em;
+	padding-left: 1.6em;
+}
+
+.markdown li {
+	margin-bottom: 0.25em;
+}
+
+.markdown .markdown-task {
+	list-style: none;
+	margin-left: -1.3em;
+}
+
+.markdown .markdown-task input {
+	margin-right: 6px;
+}
+
+.markdown blockquote {
+	margin: 0 0 1em;
+	padding: 0 0 0 12px;
+	border-left: 3px solid var(--vscode-textBlockQuote-border, var(--vscode-panel-border));
+	background-color: var(--vscode-textBlockQuote-background, transparent);
+	color: var(--vscode-descriptionForeground);
+}
+
+.markdown code {
+	padding: 1px 4px;
+	border-radius: 3px;
+	font-family: var(--vscode-editor-font-family);
+	font-size: 0.92em;
+	background-color: var(--vscode-textCodeBlock-background, var(--vscode-editor-background));
+}
+
+.markdown pre {
+	margin: 0 0 1em;
+	padding: 10px 12px;
+	border-radius: 3px;
+	/* Long lines scroll inside the block rather than widening the pane. */
+	overflow-x: auto;
+	background-color: var(--vscode-textCodeBlock-background, var(--vscode-editor-background));
+}
+
+.markdown pre code {
+	padding: 0;
+	background: none;
+}
+
+.markdown img {
+	max-width: 100%;
+	height: auto;
+	border-radius: 3px;
+}
+
+/* An image that could not be resolved, or one pointing somewhere remote: named
+   rather than fetched, so opening a ticket never calls out to anywhere. */
+.markdown-missing-image,
+.markdown-raw {
+	color: var(--vscode-descriptionForeground);
+	font-family: var(--vscode-editor-font-family);
+	font-size: 0.92em;
+}
+
+.markdown hr {
+	border: none;
+	border-top: 1px solid var(--vscode-panel-border);
+	margin: 1.5em 0;
+}
+
+.markdown-table {
+	overflow-x: auto;
+	margin-bottom: 1em;
+}
+
+.markdown table {
+	border-collapse: collapse;
+}
+
+.markdown th,
+.markdown td {
+	padding: 4px 10px;
+	border: 1px solid var(--vscode-panel-border);
+	text-align: left;
+}
+
+.markdown th {
+	background-color: var(--vscode-keybindingTable-headerBackground, transparent);
+}
+
+/* ---------- description editor ---------- */
+
+/* Pushed to the right-hand end of the tab strip, away from the tabs. */
+/* The `margin-left: auto` lives on the group, not on a button: with it on the
+   button, a second one beside it took the spacing and the pair split apart. */
+.detail-actions {
+	display: flex;
+	gap: 6px;
+	margin-left: auto;
+	align-self: center;
+}
+
+.detail-ai {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.detail-ai.active {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.ai-prompt {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 16px;
+	padding: 10px 12px;
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 3px;
+	background-color: var(--vscode-editorWidget-background);
+}
+
+.ai-prompt-head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.ai-prompt-provider {
+	color: var(--vscode-descriptionForeground);
+	font-size: 0.9em;
+}
+
+.ai-prompt-close {
+	margin-left: auto;
+}
+
+.ai-prompt-agent {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.ai-prompt-label {
+	font-weight: 600;
+}
+
+.ai-prompt-select {
+	flex: 1 1 16ch;
+	min-width: 16ch;
+}
+
+/* Under the model picker's custom box, only while what is typed is unusable. */
+.model-select-hint {
+	flex-basis: 100%;
+	color: var(--vscode-errorForeground);
+	font-size: 0.9em;
+}
+
+.ai-prompt-input {
+	padding: 6px 8px;
+	font-family: inherit;
+	font-size: inherit;
+	color: var(--vscode-input-foreground);
+	background-color: var(--vscode-input-background);
+	border: 1px solid var(--vscode-input-border, transparent);
+	border-radius: 2px;
+	resize: vertical;
+}
+
+.ai-prompt-input:focus {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.ai-prompt-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* Offered only when there is a conversation to continue, so it appears and
+   disappears between documents; laid out like the generate tab's, which asks
+   the same question. */
+.ai-prompt-continue {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+}
+
+.ai-prompt-continue input {
+	margin: 0;
+	flex: none;
+}
+
+.ai-prompt-optional {
+	color: var(--vscode-descriptionForeground);
+}
+
+/* One line, updated per message. Streaming the text itself into the editor
+   would re-render the pane on every chunk and make Cancel ambiguous. */
+.ai-progress {
+	flex: 1;
+	min-width: 0;
+	color: var(--vscode-descriptionForeground);
+	font-size: 0.9em;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.ai-tokens {
+	opacity: 0.75;
+}
+
+/* Capped and scrollable: a long run produces a lot of these, and the panel must
+   not push the description off the screen. */
+.ai-activity {
+	max-height: 11em;
+	overflow-y: auto;
+	padding: 6px 8px;
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 2px;
+	background-color: var(--vscode-editor-background);
+	font-family: var(--vscode-editor-font-family);
+	font-size: 0.85em;
+	line-height: 1.5;
+}
+
+.ai-activity-line {
+	margin: 0 0 4px;
+	color: var(--vscode-descriptionForeground);
+	/* Reasoning arrives as paragraphs, so it wraps rather than truncating. */
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.ai-activity-line:last-child {
+	margin-bottom: 0;
+	color: var(--vscode-foreground);
+}
+
+.ai-prompt-hint {
+	margin: 0;
+	color: var(--vscode-descriptionForeground);
+	font-size: 0.9em;
+}
+
+/* ---------- the AI answer waiting to be approved ---------- */
+
+/* It stands where the text it would replace stands, so it takes that column's
+   width rather than the panel's. */
+.ai-review {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	min-width: 0;
+}
+
+.ai-review-head {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.ai-review-round,
+.ai-review-stats {
+	color: var(--vscode-descriptionForeground);
+	font-size: 0.9em;
+}
+
+.ai-review-stats {
+	display: flex;
+	gap: 8px;
+	font-family: var(--vscode-editor-font-family);
+}
+
+.ai-review-added {
+	color: var(--vscode-gitDecoration-addedResourceForeground, var(--vscode-charts-green));
+}
+
+.ai-review-removed {
+	color: var(--vscode-gitDecoration-deletedResourceForeground, var(--vscode-charts-red));
+}
+
+/* Pushed to the right, the way `.detail-actions` is on the tab bar. */
+.ai-review-views {
+	display: flex;
+	margin-left: auto;
+}
+
+.ai-review-note {
+	margin: 0;
+	color: var(--vscode-descriptionForeground);
+	font-size: 0.95em;
+}
+
+.ai-review-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.ai-review-hint {
+	flex: 1 1 24ch;
+	min-width: 0;
+}
+
+/* The diff itself. A monospace column, because alignment is what makes two
+   versions of one line comparable. */
+.diff {
+	max-height: 60vh;
+	overflow: auto;
+	padding: 6px 0;
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 3px;
+	background-color: var(--vscode-editor-background);
+	font-family: var(--vscode-editor-font-family);
+	font-size: var(--vscode-editor-font-size, 0.9em);
+	line-height: 1.5;
+}
+
+.diff-line {
+	display: flex;
+	gap: 8px;
+	margin: 0;
+	padding: 0 10px;
+}
+
+.diff-marker {
+	flex: none;
+	width: 1ch;
+	color: var(--vscode-descriptionForeground);
+	user-select: none;
+}
+
+/* Wraps rather than scrolling sideways: a description is prose, and a reader
+   who has to scroll each line to compare two of them is not comparing them. */
+.diff-text {
+	min-width: 0;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.diff-added {
+	background-color: var(--vscode-diffEditor-insertedLineBackground, rgba(80, 200, 120, 0.12));
+}
+
+.diff-removed {
+	background-color: var(--vscode-diffEditor-removedLineBackground, rgba(230, 100, 100, 0.12));
+}
+
+/* The words that actually moved inside a line that was rewritten. `mark` is
+   the element for it, but its default yellow belongs to no theme. */
+.diff-word {
+	color: inherit;
+	border-radius: 2px;
+	background-color: var(--vscode-diffEditor-insertedTextBackground, rgba(80, 200, 120, 0.3));
+}
+
+.diff-removed .diff-word {
+	background-color: var(--vscode-diffEditor-removedTextBackground, rgba(230, 100, 100, 0.3));
+}
+
+.diff-gap {
+	margin: 0;
+	padding: 2px 10px;
+	color: var(--vscode-descriptionForeground);
+	background-color: var(--vscode-editorWidget-background);
+	font-size: 0.9em;
+}
+
+.description-editor {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	/* Matches the rendered description, so Edit does not resize the column. */
+	min-width: 0;
+}
+
+.description-textarea {
+	min-height: 40vh;
+	padding: 8px 10px;
+	resize: vertical;
+	font-family: var(--vscode-editor-font-family);
+	font-size: var(--vscode-editor-font-size, inherit);
+	line-height: 1.55;
+	color: var(--vscode-input-foreground);
+	background-color: var(--vscode-input-background);
+	border: 1px solid var(--vscode-input-border, transparent);
+	border-radius: 2px;
+}
+
+.description-textarea:focus {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.editor-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.editor-hint,
+.editor-progress {
+	color: var(--vscode-descriptionForeground);
+	font-size: 0.9em;
+}
+
+.format-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.format-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	padding: 0;
+	border: none;
+	border-radius: 3px;
+	background: none;
+	color: var(--vscode-icon-foreground);
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.format-button:hover:not(:disabled) {
+	background-color: var(--vscode-toolbar-hoverBackground);
+}
+
+/* The style under the caret is on, so the button reads as pressed. */
+.format-button.active {
+	background-color: var(--vscode-inputOption-activeBackground);
+	color: var(--vscode-inputOption-activeForeground, var(--vscode-icon-foreground));
+	box-shadow: inset 0 0 0 1px var(--vscode-inputOption-activeBorder, transparent);
+}
+
+/* Inherits the button's colour, which is what keeps it following the theme. */
+.format-icon {
+	display: block;
+	color: currentColor;
+}
+
+.format-select {
+	height: 26px;
+	margin-right: 2px;
+	padding: 0 4px;
+	font: inherit;
+	color: var(--vscode-dropdown-foreground);
+	background-color: var(--vscode-dropdown-background);
+	border: 1px solid var(--vscode-dropdown-border, transparent);
+	border-radius: 3px;
+	cursor: pointer;
+}
+
+.format-select:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.format-select:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+.format-button:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.format-button:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+.format-separator {
+	width: 1px;
+	height: 16px;
+	margin: 0 4px;
+	background-color: var(--vscode-panel-border);
+}
+
+.detail-error,
+.detail-notice {
+	margin: 0;
+	padding: 6px 10px;
+	border-radius: 3px;
+	font-size: 0.95em;
+}
+
+.detail-error {
+	color: var(--vscode-errorForeground);
+	background-color: var(--vscode-inputValidation-errorBackground);
+	border: 1px solid var(--vscode-inputValidation-errorBorder);
+}
+
+.detail-notice {
+	background-color: var(--vscode-inputValidation-warningBackground);
+	border: 1px solid var(--vscode-inputValidation-warningBorder);
+}
+
+/* ---------- history timeline ---------- */
+
+.history {
+	margin: 0 0 0 5px;
+	padding: 0 0 0 18px;
+	list-style: none;
+	border-left: 1px solid var(--vscode-panel-border);
+}
+
+.history-item {
+	position: relative;
+	padding-bottom: 18px;
+}
+
+.history-item::before {
+	content: '';
+	position: absolute;
+	left: -22px;
+	top: 5px;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background-color: var(--vscode-descriptionForeground);
+	border: 2px solid var(--vscode-editor-background);
+}
+
+.history-head {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.history-author {
+	font-weight: 600;
+}
+
+.history-action,
+.history-time {
+	color: var(--vscode-descriptionForeground);
+}
+
+.history-field {
+	font-family: var(--vscode-editor-font-family);
+	font-size: 0.9em;
+}
+
+.history-time {
+	margin-left: auto;
+	font-size: 0.9em;
+}
+
+.history-change {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 4px;
+	font-size: 0.95em;
+}
+
+.history-from {
+	color: var(--vscode-descriptionForeground);
+	text-decoration: line-through;
+}
+
+.history-arrow {
+	color: var(--vscode-descriptionForeground);
+}
+
+/* A description change: too big for the inline row, so it folds away. */
+.history-diff {
+	margin-top: 4px;
+	font-size: 0.95em;
+}
+
+.history-diff > summary {
+	color: var(--vscode-textLink-foreground);
+	cursor: pointer;
+	width: fit-content;
+}
+
+.history-value {
+	margin-top: 8px;
+}
+
+.history-value-label {
+	display: block;
+	margin-bottom: 3px;
+	color: var(--vscode-descriptionForeground);
+	font-size: 0.9em;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.history-value-text {
+	margin: 0;
+	padding: 6px 10px;
+	/* A long description scrolls inside its own box instead of turning the
+	   timeline into a wall of text. */
+	max-height: 40vh;
+	overflow: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+	font-family: var(--vscode-editor-font-family);
+	font-size: 0.92em;
+	border-radius: 3px;
+	background-color: var(--vscode-textCodeBlock-background, var(--vscode-editor-background));
+	border-left: 2px solid var(--vscode-textBlockQuote-border);
+}
+
+.history-value-empty {
+	margin: 0;
+	padding: 6px 10px;
+	color: var(--vscode-descriptionForeground);
+	font-style: italic;
+}
+
+.history-comment {
+	margin: 6px 0 0;
+	padding: 6px 10px;
+	white-space: pre-wrap;
+	border-radius: 3px;
+	background-color: var(--vscode-textBlockQuote-background);
+	border-left: 2px solid var(--vscode-textBlockQuote-border);
+}
+
+/* ---------- settings ---------- */
+
+/* Centred and bounded rather than hugging the left edge: a settings tab is as
+   wide as the editor group, and a 60ch column pinned left looks broken at any
+   size above a split pane. `border-box` so the padding lives inside the width
+   and a narrow pane never scrolls sideways. */
+.settings {
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	width: 100%;
+	max-width: 780px;
+	margin: 0 auto;
+	padding: 24px 20px 40px;
+}
+
+.settings *,
+.settings *::before,
+.settings *::after {
+	box-sizing: border-box;
+}
+
+.settings-header {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.settings-title {
+	margin: 0;
+	font-size: 1.4em;
+	font-weight: 600;
+}
+
+.settings-subtitle {
+	margin: 0;
+	color: var(--vscode-descriptionForeground);
+}
+
+.settings-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+/* `display: flex` above beats the `hidden` attribute's UA default, so a field
+   the Scan tab hides for the other deployment mode needs this to stay hidden.
+   Hidden rather than unmounted, for the reason the tab panels are: Save writes
+   the whole settings object, so switching mode must not look like it discarded
+   what was typed on the other side. */
+.settings-field[hidden] {
+	display: none;
+}
+
+.settings-label {
+	font-weight: 600;
+}
+
+.settings-input-row {
+	display: flex;
+	gap: 8px;
+}
+
+.settings-input {
+	flex: 1;
+	min-width: 0;
+	padding: 5px 8px;
+	font-family: inherit;
+	font-size: inherit;
+	color: var(--vscode-input-foreground);
+	background-color: var(--vscode-input-background);
+	border: 1px solid var(--vscode-input-border, transparent);
+	border-radius: 2px;
+}
+
+.settings-input::placeholder {
+	color: var(--vscode-input-placeholderForeground);
+}
+
+.settings-input:focus {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.settings-hint {
+	margin: 0;
+	color: var(--vscode-descriptionForeground);
+	font-size: 0.9em;
+}
+
+.settings-error {
+	margin: 0;
+	color: var(--vscode-errorForeground);
+	font-size: 0.9em;
+}
+
+.settings-error-banner {
+	padding: 6px 10px;
+	border-radius: 3px;
+	background-color: var(--vscode-inputValidation-errorBackground);
+	border: 1px solid var(--vscode-inputValidation-errorBorder);
+}
+
+.settings-actions {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	gap: 8px;
+}
+
+/* On the left of the Cancel / Save row, pushed there by its own margin. */
+.settings-version {
+	margin-right: auto;
+	user-select: text;
+}
+
+/* Collapsed by default, so the setup gate — tracker folder and name — stays the
+   first thing on screen for anyone who never touches the assistant. */
+.settings-section {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 12px 14px;
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 3px;
+}
+
+.settings-section:not([open]) {
+	gap: 0;
+	padding-bottom: 12px;
+}
+
+.settings-summary {
+	font-weight: 600;
+	cursor: pointer;
+}
+
+/* Wraps rather than crushing: at a narrow width the label was breaking across
+   two lines while the control beside it shrank to nothing. */
+.settings-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.settings-row .settings-label {
+	flex: 1 1 auto;
+	/* Wide enough for the longest label, so it only wraps when it truly must. */
+	min-width: 10ch;
+}
+
+.settings-input-compact {
+	flex: 0 1 auto;
+	width: auto;
+	min-width: 12ch;
+	max-width: 100%;
+}
+
+.service-card {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 10px 12px;
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 3px;
+}
+
+.service-title {
+	flex: 1 1 auto;
+	font-weight: 600;
+}
+
+/* Label beside input, both columns wrapping to one at a narrow width. */
+.service-grid {
+	display: grid;
+	grid-template-columns: minmax(10ch, max-content) minmax(0, 1fr);
+	align-items: center;
+	gap: 6px 10px;
+}
+
+@media (max-width: 480px) {
+	.service-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.compose-picker {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.compose-options {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 14px;
+}
+
+.compose-option {
+	white-space: nowrap;
+}
+
+/* A button that reads as a link, for a small action inside a hint. */
+.link-button {
+	padding: 0;
+	border: none;
+	background: none;
+	color: var(--vscode-textLink-foreground);
+	font: inherit;
+	cursor: pointer;
+}
+
+.link-button:hover {
+	text-decoration: underline;
+}
+
+.agent-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.agent {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 8px 10px;
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 3px;
+}
+
+.agent-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+/* Indented under its role, so the two levels read as one thing rather than two
+   flat lists that happen to be near each other. */
+.skill-list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin: 0;
+	padding: 0 0 0 12px;
+	border-left: 2px solid var(--vscode-panel-border);
+	list-style: none;
+}
+
+.skill {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.skill-name {
+	flex: 1 1 14ch;
+	min-width: 0;
+}
+
+.agent-text {
+	flex: 1 1 20ch;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.agent-name {
+	font-weight: 600;
+}
+
+.agent-types {
+	color: var(--vscode-descriptionForeground);
+	font-size: 0.9em;
+}
+
+.settings-textarea {
+	min-height: 14em;
+	resize: vertical;
+	font-family: var(--vscode-editor-font-family);
+	line-height: 1.45;
+}
+
+/* Shared by the board and the settings form; `.settings-button` is kept as an
+   alias so the form did not have to change. */
+.button,
+.settings-button {
+	padding: 5px 14px;
+	font-family: inherit;
+	font-size: inherit;
+	color: var(--vscode-button-foreground);
+	background-color: var(--vscode-button-background);
+	border: 1px solid var(--vscode-button-border, transparent);
+	border-radius: 2px;
+	cursor: pointer;
+}
+
+.button:hover:not(:disabled),
+.settings-button:hover:not(:disabled) {
+	background-color: var(--vscode-button-hoverBackground);
+}
+
+.button:focus-visible,
+.settings-button:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: 2px;
+}
+
+.button:disabled,
+.settings-button:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+.button.secondary,
+.settings-button.secondary {
+	color: var(--vscode-button-secondaryForeground);
+	background-color: var(--vscode-button-secondaryBackground);
+}
+
+.button.secondary:hover:not(:disabled),
+.settings-button.secondary:hover:not(:disabled) {
+	background-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* Stop, not Cancel. A live run is a child process costing money and rate
+   limit, and grey secondary read as “dismiss this” — the one control that ends
+   it looked passive.
+
+   There is no `button.dangerBackground` in the theme, so it borrows the status
+   bar's error pair: registered by every theme, and already the colour VS Code
+   itself uses to say something is wrong. The nested fallback is the shape
+   `.generate-run.is-running` already uses. Hover is a brightness step rather
+   than a second variable, because no theme defines a hover partner for it.
+
+   No `.settings-button.danger` alias: that alias exists only so the settings
+   form did not have to change, and nothing in it is destructive. */
+.button.danger {
+	color: var(--vscode-statusBarItem-errorForeground, var(--vscode-button-foreground));
+	background-color: var(
+		--vscode-statusBarItem-errorBackground,
+		var(--vscode-inputValidation-errorBackground)
+	);
+	border-color: transparent;
+}
+
+.button.danger:hover:not(:disabled) {
+	filter: brightness(1.15);
+}
+
+/* The two settings tabs. `.settings` sets the gap between its own children, and
+   a panel is one of them, so it has to set the gap for its fields itself. */
+.settings-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.settings-panel[hidden] {
+	display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   The generate tab.
+
+   Shares the settings form's field, input and button rules — it is the same
+   kind of document — and adds only what the flow needs: a log that scrolls on
+   its own, a tickable list, and the created tickets filling in beneath.
+   --------------------------------------------------------------------------- */
+
+.generate {
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	width: 100%;
+	max-width: 1280px;
+	margin: 0 auto;
+	padding: 24px 20px 40px;
+}
+
+/* Controls on the left, what is happening on the right. One column below
+   1000px, so a tab split down the middle of the window is still usable. */
+.generate-columns {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 20px;
+	align-items: start;
+}
+
+@media (min-width: 1000px) {
+	.generate-columns {
+		grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+	}
+
+	/* The activity stays put while the left column grows with each ticket. */
+	.generate-side {
+		position: sticky;
+		top: 24px;
+	}
+}
+
+.generate-main,
+.generate-side {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	min-width: 0;
+}
+
+.generate-idle {
+	color: var(--vscode-descriptionForeground);
+}
+
+.generate *,
+.generate *::before,
+.generate *::after {
+	box-sizing: border-box;
+}
+
+.generate.empty {
+	color: var(--vscode-descriptionForeground);
+}
+
+.generate-header {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.generate-title {
+	margin: 0;
+	font-size: 1.4em;
+	font-weight: 600;
+}
+
+.generate-subtitle {
+	margin: 0;
+	color: var(--vscode-descriptionForeground);
+}
+
+.generate-section {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 16px;
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 4px;
+}
+
+.generate-heading {
+	margin: 0;
+	font-size: 1em;
+	font-weight: 600;
+}
+
+.generate-optional {
+	font-weight: 400;
+	color: var(--vscode-descriptionForeground);
+}
+
+.generate-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.generate-status {
+	color: var(--vscode-descriptionForeground);
+	font-size: 0.9em;
+}
+
+.generate-choices {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.generate-choice label {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 4px 6px;
+	border-radius: 3px;
+	cursor: pointer;
+}
+
+.generate-choice label:hover {
+	background-color: var(--vscode-list-hoverBackground);
+}
+
+.generate-choice input {
+	margin: 3px 0 0;
+	flex: none;
+}
+
+/* The follow-ups the list reflects, read as the conversation it answers. Muted:
+   the list is the content, this is what it was asked for. */
+.generate-followups {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin: 8px 0 0;
+	padding: 0;
+	list-style: none;
+	color: var(--vscode-descriptionForeground);
+	font-size: 0.9em;
+}
+
+.generate-followup {
+	padding: 2px 6px;
+	border-left: 2px solid var(--vscode-widget-border, var(--vscode-panel-border));
+	white-space: pre-wrap;
+}
+
+.generate-followup-you {
+	color: var(--vscode-textLink-foreground);
+	margin-right: 4px;
+}
+
+/* "Continue the previous conversation" — one row, label and box together. */
+.generate-continue {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+}
+
+.generate-continue input {
+	margin: 0;
+	flex: none;
+}
+
+.generate-created {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.generate-created-item {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+}
+
+.generate-created-key {
+	flex: none;
+	font-family: var(--vscode-editor-font-family);
+	color: var(--vscode-descriptionForeground);
+}
+
+.generate-created-title {
+	flex: 1 1 auto;
+}
+
+.generate-created-warning {
+	flex: none;
+	font-size: 0.85em;
+	color: var(--vscode-editorWarning-foreground);
+}
+
+/* Fixed height rather than growing: the tab must not jump around under the
+   user while a run appends to it several times a second. */
+.generate-log {
+	max-height: 260px;
+	overflow-y: auto;
+	padding: 8px 10px;
+	border-radius: 3px;
+	background-color: var(--vscode-textCodeBlock-background);
+	font-family: var(--vscode-editor-font-family);
+	font-size: 0.85em;
+	line-height: 1.5;
+}
+
+.generate-log-line {
+	margin: 0;
+	color: var(--vscode-descriptionForeground);
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.generate-log-line:last-child {
+	color: var(--vscode-foreground);
+}
+
+/* Composed with `.settings-input`, which is where the colours live — a textarea
+   styled on its own gets the browser's white box, not the theme's. */
+.generate-instruction {
+	resize: vertical;
+	line-height: 1.45;
+}
+
+/* One row per child, the live view a chronological log cannot give. */
+.generate-count {
+	font-weight: 400;
+	color: var(--vscode-descriptionForeground);
+}
+
+.generate-runs {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.generate-run {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: 2px 8px;
+	align-items: baseline;
+}
+
+.generate-run-mark {
+	flex: none;
+	color: var(--vscode-descriptionForeground);
+}
+
+.generate-run.is-running .generate-run-mark {
+	color: var(--vscode-charts-blue, var(--vscode-textLink-foreground));
+}
+
+.generate-run.is-done .generate-run-mark {
+	color: var(--vscode-charts-green, var(--vscode-testing-iconPassed));
+}
+
+.generate-run.is-failed .generate-run-mark {
+	color: var(--vscode-editorWarning-foreground);
+}
+
+.generate-run.is-waiting .generate-run-title {
+	color: var(--vscode-descriptionForeground);
+}
+
+.generate-run-title {
+	overflow-wrap: anywhere;
+}
+
+/* The heartbeat, under its title rather than beside it: it changes several
+   times a second, and a column that reflows on every tick is unreadable. */
+.generate-run-note {
+	grid-column: 2;
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.generate-log-lane {
+	color: var(--vscode-textLink-foreground);
+}
+
+.generate-log-lane::after {
+	content: ' · ';
+	color: var(--vscode-descriptionForeground);
+}
+
+/* ---------------------------------------------------------------------------
+   The scan results tab.
+
+   Shares the generate tab's shell wholesale — the two-column layout, the log
+   pane, the section headings — because they are the same kind of document. Only
+   what a verdict needs is new: a condition list, a measures row and an issues
+   table.
+   --------------------------------------------------------------------------- */
+
+.scan-conditions {
+	margin: 0;
+	padding-left: 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.scan-metric {
+	color: var(--vscode-descriptionForeground);
+}
+
+.scan-measures {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+}
+
+.scan-measure {
+	display: flex;
+	flex-direction: column;
+	min-width: 8ch;
+}
+
+.scan-measure-value {
+	font-size: 1.4em;
+	font-variant-numeric: tabular-nums;
+}
+
+.scan-measure-label {
+	color: var(--vscode-descriptionForeground);
+	font-size: 0.9em;
+}
+
+.scan-issues {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+.scan-issue {
+	display: flex;
+	gap: 10px;
+	padding: 6px 0;
+	border-bottom: 1px solid var(--vscode-editorWidget-border, transparent);
+}
+
+.scan-issue:last-child {
+	border-bottom: none;
+}
+
+/* Fixed width so the messages line up whatever the severity is called. */
+.scan-severity {
+	flex: 0 0 7ch;
+	font-size: 0.85em;
+	text-transform: uppercase;
+	color: var(--vscode-descriptionForeground);
+}
+
+.scan-issue.severity-blocker .scan-severity,
+.scan-issue.severity-high .scan-severity {
+	color: var(--vscode-errorForeground);
+}
+
+.scan-issue.severity-medium .scan-severity {
+	color: var(--vscode-editorWarning-foreground, var(--vscode-descriptionForeground));
+}
+
+.scan-issue-body {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.scan-issue-message {
+	overflow-wrap: anywhere;
+}
+
+.scan-issue-meta {
+	display: flex;
+	gap: 8px;
+	align-items: baseline;
+	color: var(--vscode-descriptionForeground);
+	font-size: 0.9em;
+}
+
+/* A link, not a button, to look at — but a button to use, so it is keyboard
+   reachable and needs no href the CSP would have to allow. */
+.scan-issue-location {
+	padding: 0;
+	border: none;
+	background: none;
+	font: inherit;
+	color: var(--vscode-textLink-foreground);
+	cursor: pointer;
+	text-align: left;
+}
+
+.scan-issue-location:hover {
+	text-decoration: underline;
+}
+
+/* ------------------------------------------------------------------ tests */
+/* The board's Tests tab: two columns. The rows on the left borrow the generate
+   tab's mark/title/note grid and the log its classes; the columns, the run
+   detail and the evidence are the tab's own. */
+
+.tests {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.test-actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.test-service {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-left: auto;
+}
+
+.test-summary {
+	margin: 0;
+	color: var(--vscode-descriptionForeground);
+}
+
+.test-live .generate-log {
+	margin-top: 8px;
+}
+
+/* Two columns above 900px — the hierarchy or the run history on the left, the
+   selected run on the right — one below, so a board beside an editor still
+   reads. The left column keeps its own scroll: an epic's tree and a run's
+   video plus output are both long, and the row that was clicked should stay
+   in view while the result under it is read. `.app` is the scroll container
+   the sticky position works against. */
+.test-columns {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 16px;
+	align-items: start;
+}
+
+@media (min-width: 900px) {
+	.test-columns {
+		grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+	}
+
+	.test-nav {
+		position: sticky;
+		top: 16px;
+		max-height: calc(100vh - 32px);
+		overflow: auto;
+	}
+}
+
+.test-nav,
+.test-detail {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	min-width: 0;
+}
+
+/* The hierarchy: nested lists, each level indented and ruled. */
+.test-tree,
+.test-tree ul,
+.test-history {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.test-tree ul {
+	margin-left: 6px;
+	padding-left: 12px;
+	border-left: 1px solid var(--vscode-panel-border, var(--vscode-widget-border, transparent));
+}
+
+/* Baseline, not centre: a row mixes a badge, a monospace key at 0.9em and a
+   proportional title at 1em, and centring their boxes leaves their text
+   sitting on three different lines. */
+.test-tree-row,
+.test-detail-head {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	flex-wrap: wrap;
+	padding: 4px 6px;
+}
+
+.test-detail-head {
+	padding: 0;
+}
+
+.test-key {
+	font-family: var(--vscode-editor-font-family);
+	font-size: 0.9em;
+	color: var(--vscode-descriptionForeground);
+}
+
+.test-tree-title,
+.test-detail-title {
+	text-align: left;
+	overflow-wrap: anywhere;
+}
+
+.test-tree-count {
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+	white-space: nowrap;
+}
+
+.test-tree-warning {
+	margin: 0;
+	font-size: 0.85em;
+	color: var(--vscode-editorWarning-foreground);
+}
+
+/* A selectable row is one button — never a button inside a button — styled as
+   a list item; `.generate-run` supplies the mark/title/note grid. */
+.test-tree-case,
+.test-history-run {
+	width: 100%;
+	margin: 0;
+	padding: 4px 6px;
+	border: 0;
+	border-radius: 4px;
+	background: none;
+	font: inherit;
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.test-tree-case:hover,
+.test-history-run:hover {
+	background-color: var(--vscode-list-hoverBackground);
+}
+
+.test-tree-case:focus-visible,
+.test-history-run:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.test-tree-case[aria-pressed='true'],
+.test-history-run[aria-pressed='true'] {
+	background-color: var(--vscode-list-activeSelectionBackground);
+	color: var(--vscode-list-activeSelectionForeground);
+}
+
+/* The generate tab greys a waiting row's title and note; a selected row's text
+   takes the selection colour whatever its status. */
+.test-tree-case[aria-pressed='true'] .generate-run-title,
+.test-tree-case[aria-pressed='true'] .generate-run-note,
+.test-tree-case[aria-pressed='true'] .test-key,
+.test-history-run[aria-pressed='true'] .generate-run-title,
+.test-history-run[aria-pressed='true'] .generate-run-note {
+	color: inherit;
+}
+
+.test-history-live,
+.test-history-more {
+	padding: 4px 6px;
+}
+
+.test-history-more,
+.test-detail-earlier {
+	margin: 0;
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+}
+
+.test-run-outcome {
+	display: inline;
+	white-space: nowrap;
+}
+
+.test-run-time,
+.test-run-meta {
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+	white-space: nowrap;
+}
+
+.test-detail-case {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.test-run {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	border: 1px solid var(--vscode-panel-border, var(--vscode-widget-border, transparent));
+	border-radius: 4px;
+	padding: 6px 10px;
+}
+
+.test-run-head {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.test-run-command {
+	display: block;
+	font-family: var(--vscode-editor-font-family);
+	font-size: 0.85em;
+	overflow-wrap: anywhere;
+	color: var(--vscode-descriptionForeground);
+}
+
+.test-run-files {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.test-run-video,
+.test-run-image {
+	margin: 0;
+	max-width: 720px;
+}
+
+.test-run-video video,
+.test-run-image img {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	border-radius: 4px;
+}
+
+.test-run-video video {
+	aspect-ratio: 16 / 9;
+}
+
+.test-run-video figcaption,
+.test-run-image figcaption {
+	margin-top: 2px;
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+}
+
+.test-run-file {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.test-run-file-name {
+	font-family: var(--vscode-editor-font-family);
+	font-size: 0.9em;
+	overflow-wrap: anywhere;
+}
+
+.test-run-file.is-missing .test-run-file-name {
+	color: var(--vscode-descriptionForeground);
+	text-decoration: line-through;
+}
+
+.test-run-none {
+	margin: 0;
+	font-size: 0.9em;
+	color: var(--vscode-descriptionForeground);
+}
+
+.test-run-output > summary {
+	cursor: pointer;
+}
+
+.test-run-output-open {
+	margin-left: 12px;
+}
+
+.test-run-output-text {
+	margin: 6px 0 0;
+	max-height: 360px;
+	overflow: auto;
+	padding: 8px;
+	font-family: var(--vscode-editor-font-family);
+	font-size: 0.85em;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	background: var(--vscode-textCodeBlock-background);
+	border-radius: 4px;
+}
+
+.test-run-warnings {
+	margin: 0;
+	padding-left: 1.2em;
+	font-size: 0.85em;
+	color: var(--vscode-editorWarning-foreground);
+}
+
+.test-run-actions {
+	display: flex;
+	gap: 12px;
+}
+
+
+.test-run-video-error {
+	margin: 4px 0 0;
+}
+
+.test-run-video-error .detail-error {
+	margin: 0;
+}
+
+.test-run-video-advice {
+	margin: 4px 0 0;
+	padding-left: 1.4em;
+	font-size: 0.9em;
+	color: var(--vscode-descriptionForeground);
+}
+
+.test-run-video-advice li + li {
+	margin-top: 2px;
+}
+
+/* The board's own player. The controls overlay the bottom of the frame the way
+   the browser's do, on a gradient so they read on any frame; fixed light
+   colours rather than theme ones, because the surface under them is a video,
+   not the editor. Visible while paused, on hover or when focused; faded while
+   playing, so the recording is what is on screen. */
+.test-run-player {
+	position: relative;
+	border-radius: 4px;
+	overflow: hidden;
+	background: #000;
+}
+
+.test-run-player-canvas {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	background: #000;
+	cursor: pointer;
+}
+
+.test-run-player-bar {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 18px 12px 8px;
+	color: #fff;
+	background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.7));
+	opacity: 1;
+	transition: opacity 0.2s ease;
+}
+
+.test-run-player.is-playing:not(:hover):not(:focus-within) .test-run-player-bar {
+	opacity: 0;
+}
+
+.test-run-player-toggle {
+	flex: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	color: #fff;
+	background: rgba(255, 255, 255, 0.18);
+	cursor: pointer;
+}
+
+.test-run-player-toggle:hover {
+	background: rgba(255, 255, 255, 0.32);
+}
+
+.test-run-player-toggle:focus-visible {
+	outline: 1px solid #fff;
+	outline-offset: 2px;
+}
+
+.test-run-player-bar input[type='range'] {
+	flex: 1;
+	min-width: 0;
+	margin: 0;
+	height: 16px;
+	accent-color: #fff;
+	cursor: pointer;
+}
+
+.test-run-player-time {
+	flex: none;
+	font-variant-numeric: tabular-nums;
+	font-size: 0.85em;
+	line-height: 1;
+	white-space: nowrap;
+	color: #fff;
+	text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+}
+
+.test-run-video-probe {
+	margin: 6px 0 0;
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+	user-select: text;
+}
+
+/* ---- Playwright trace on the Tests tab (traceViewer.tsx) ---- */
+
+.test-trace {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.test-trace.is-missing .test-run-file-name {
+	color: var(--vscode-descriptionForeground);
+	text-decoration: line-through;
+}
+
+.test-trace-body {
+	border: 1px solid var(--vscode-panel-border, var(--vscode-widget-border, transparent));
+	border-radius: 4px;
+	padding: 8px 10px;
+}
+
+.test-trace-viewer {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.test-trace-summary {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.test-trace-error-count {
+	color: var(--vscode-errorForeground);
+}
+
+/* The filmstrip: one row, scrolled sideways, never the page. */
+.test-trace-filmstrip {
+	display: flex;
+	gap: 4px;
+	overflow-x: auto;
+	padding-bottom: 4px;
+}
+
+.test-trace-thumb {
+	flex: 0 0 auto;
+	width: 96px;
+	padding: 0;
+	border: 2px solid transparent;
+	border-radius: 3px;
+	background: none;
+	cursor: pointer;
+}
+
+.test-trace-thumb:hover,
+.test-trace-thumb:focus-visible {
+	border-color: var(--vscode-focusBorder);
+	outline: none;
+}
+
+.test-trace-thumb.is-inside {
+	border-color: var(--vscode-progressBar-background, var(--vscode-focusBorder));
+}
+
+.test-trace-frame {
+	position: relative;
+	display: block;
+	width: 100%;
+	overflow: hidden;
+	border-radius: 2px;
+	background: var(--vscode-textCodeBlock-background);
+}
+
+.test-trace-frame img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+.test-trace-frame.is-loading {
+	animation: test-trace-pulse 1.2s ease-in-out infinite;
+}
+
+.test-trace-frame.is-error {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 4px;
+	font-size: 0.8em;
+	color: var(--vscode-errorForeground);
+}
+
+@keyframes test-trace-pulse {
+	0%, 100% { opacity: 0.55; }
+	50% { opacity: 1; }
+}
+
+/* Where the click landed, drawn over the "before" frame. */
+.test-trace-point {
+	position: absolute;
+	width: 14px;
+	height: 14px;
+	margin: -7px 0 0 -7px;
+	border: 2px solid #e5484d;
+	border-radius: 50%;
+	background: rgba(229, 72, 77, 0.35);
+	box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7);
+	pointer-events: none;
+}
+
+.test-trace-columns {
+	display: grid;
+	grid-template-columns: minmax(220px, 2fr) minmax(0, 3fr);
+	gap: 12px;
+	align-items: start;
+}
+
+@media (max-width: 900px) {
+	.test-trace-columns {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.test-trace-actions {
+	display: flex;
+	flex-direction: column;
+	max-height: 480px;
+	overflow: auto;
+	border: 1px solid var(--vscode-panel-border, var(--vscode-widget-border, transparent));
+	border-radius: 4px;
+}
+
+.test-trace-action {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+	width: 100%;
+	padding: 3px 8px;
+	border: none;
+	border-left: 2px solid transparent;
+	background: none;
+	color: var(--vscode-foreground);
+	font: inherit;
+	font-size: 0.9em;
+	text-align: left;
+	cursor: pointer;
+}
+
+.test-trace-action:hover {
+	background: var(--vscode-list-hoverBackground);
+}
+
+.test-trace-action:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.test-trace-action[aria-pressed='true'] {
+	background: var(--vscode-list-activeSelectionBackground);
+	color: var(--vscode-list-activeSelectionForeground);
+	border-left-color: var(--vscode-focusBorder);
+}
+
+.test-trace-action.is-whole {
+	border-bottom: 1px solid var(--vscode-panel-border, var(--vscode-widget-border, transparent));
+}
+
+.test-trace-action.is-step .test-trace-action-title {
+	font-weight: 600;
+}
+
+.test-trace-action-title {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.test-trace-action-detail {
+	color: var(--vscode-descriptionForeground);
+	font-family: var(--vscode-editor-font-family);
+	font-size: 0.9em;
+}
+
+.test-trace-action[aria-pressed='true'] .test-trace-action-detail {
+	color: inherit;
+	opacity: 0.85;
+}
+
+.test-trace-action-time {
+	flex: 0 0 auto;
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+	font-variant-numeric: tabular-nums;
+}
+
+.test-trace-action[aria-pressed='true'] .test-trace-action-time {
+	color: inherit;
+	opacity: 0.85;
+}
+
+.test-trace-detail {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+}
+
+.test-trace-detail-head {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.test-trace-detail-arg {
+	font-family: var(--vscode-editor-font-family);
+	font-size: 0.85em;
+	overflow-wrap: anywhere;
+}
+
+.test-trace-detail-error {
+	flex-basis: 100%;
+	margin: 0;
+}
+
+.test-trace-tabs .tab {
+	padding: 4px 10px;
+	font-size: 0.9em;
+}
+
+.test-trace-pane {
+	min-height: 120px;
+}
+
+.test-trace-shots {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 10px;
+}
+
+.test-trace-shot {
+	margin: 0;
+}
+
+.test-trace-shot figcaption {
+	margin-top: 2px;
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+}
+
+.test-trace-errors {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.test-trace-errors .detail-error,
+.test-trace-error .detail-error {
+	margin: 0;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.test-trace-stack {
+	margin: 0;
+	padding-left: 1.2em;
+	font-size: 0.9em;
+}
+
+.test-trace-fn {
+	font-family: var(--vscode-editor-font-family);
+	color: var(--vscode-descriptionForeground);
+}
+
+.test-trace-console {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	font-family: var(--vscode-editor-font-family);
+	font-size: 0.85em;
+}
+
+.test-trace-console-line {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	flex-wrap: wrap;
+	padding: 2px 0;
+	border-bottom: 1px solid var(--vscode-panel-border, var(--vscode-widget-border, transparent));
+}
+
+.test-trace-console-line.is-error {
+	color: var(--vscode-errorForeground);
+}
+
+.test-trace-console-line.is-warning {
+	color: var(--vscode-editorWarning-foreground);
+}
+
+.test-trace-console-line .test-run-output-text {
+	flex-basis: 100%;
+}
+
+.test-trace-time {
+	color: var(--vscode-descriptionForeground);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.test-trace-level {
+	min-width: 5em;
+	color: var(--vscode-descriptionForeground);
+}
+
+.test-trace-text {
+	flex: 1 1 auto;
+	min-width: 0;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.test-trace-network-wrap {
+	overflow-x: auto;
+}
+
+.test-trace-network {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.85em;
+}
+
+.test-trace-network th,
+.test-trace-network td {
+	padding: 3px 8px 3px 0;
+	text-align: left;
+	vertical-align: top;
+	border-bottom: 1px solid var(--vscode-panel-border, var(--vscode-widget-border, transparent));
+	white-space: nowrap;
+}
+
+.test-trace-network th {
+	color: var(--vscode-descriptionForeground);
+	font-weight: normal;
+}
+
+.test-trace-network .test-trace-url {
+	white-space: normal;
+	overflow-wrap: anywhere;
+	font-family: var(--vscode-editor-font-family);
+}
+
+.test-trace-host {
+	color: var(--vscode-descriptionForeground);
+}
+
+.test-trace-network tr.is-error .test-trace-status {
+	color: var(--vscode-errorForeground);
+	font-weight: 600;
+}
+
+/* The MCP tab's status line and the address to paste into a client. The panel
+   no longer closes on Save — the tab is where the result is read — so the
+   confirmation and the status both have to be visible on the form itself. */
+.settings-saved {
+	color: var(--vscode-charts-green, var(--vscode-descriptionForeground));
+}
+
+.mcp-status {
+	margin: 0;
+	color: var(--vscode-descriptionForeground);
+}
+
+.mcp-status-running {
+	color: var(--vscode-charts-green, var(--vscode-descriptionForeground));
+}
+
+/* A `code` element standing in for a read-only input: the address is the
+   server's, never something typed, and selecting it by hand must still work. */
+.mcp-address {
+	display: block;
+	overflow-x: auto;
+	white-space: nowrap;
+	user-select: all;
+}
+
+/* Connect a tool: the picked tool's own snippet, previewed so what Copy puts
+   on the clipboard is what is on screen. */
+.mcp-connect {
+	margin-top: 12px;
+}
+
+.mcp-snippet {
+	margin: 8px 0 0;
+	padding: 8px;
+	overflow-x: auto;
+	font-family: var(--vscode-editor-font-family);
+	font-size: var(--vscode-editor-font-size, 13px);
+	background: var(--vscode-textCodeBlock-background);
+	border: 1px solid var(--vscode-input-border, transparent);
+	border-radius: 2px;
+	user-select: all;
+}
+
+/* ---------------------------------------------------------------------------
+   The container log tab.
+
+   A header that never scrolls and one scroller that fills the rest — unlike
+   the generate and scan tabs, whose logs are a pane beside the thing they are
+   about, here the log *is* the document. Hence the fixed viewport height and
+   the scroller owning the overflow: a page-length document would put the
+   newest line below the fold, which is the one place it must never be.
+   --------------------------------------------------------------------------- */
+.log {
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	box-sizing: border-box;
+	padding: 12px 16px 0;
+	color: var(--vscode-foreground);
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+}
+
+.log.empty {
+	color: var(--vscode-descriptionForeground);
+}
+
+.log-head {
+	flex: 0 0 auto;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--vscode-panel-border, transparent);
+}
+
+.log-title {
+	display: flex;
+	gap: 8px;
+	align-items: baseline;
+	margin: 0;
+	font-size: 1.1em;
+	font-weight: 600;
+}
+
+.log-name,
+.log-env {
+	font-weight: 400;
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+}
+
+.log-meta {
+	display: flex;
+	gap: 10px;
+	align-items: baseline;
+	margin-top: 4px;
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+}
+
+/* The state word carries the verdict, the sidebar icon's rule restated: a
+   container that died is what the reader came here about. */
+.log-state {
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	font-size: 0.85em;
+	font-weight: 600;
+}
+
+.log-state-running {
+	color: var(--vscode-charts-green, var(--vscode-testing-iconPassed));
+}
+
+.log-state-restarting {
+	color: var(--vscode-charts-yellow, var(--vscode-editorWarning-foreground));
+}
+
+.log-state-exited,
+.log-state-dead {
+	color: var(--vscode-charts-red, var(--vscode-editorError-foreground));
+}
+
+.log-follow {
+	margin-left: auto;
+}
+
+.log-follow.ended {
+	color: var(--vscode-editorWarning-foreground);
+}
+
+.log-body {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	padding: 8px 0 12px;
+	font-family: var(--vscode-editor-font-family);
+	font-size: var(--vscode-editor-font-size, 13px);
+	line-height: 1.45;
+}
+
+.log-line {
+	margin: 0;
+	/* A log line is what the container printed: its spacing is content, and a
+	   long one wraps rather than putting the document on a horizontal scroll. */
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+/* BFAST's own words, told apart from the container's — the stream ending is
+   not something the service said. */
+.log-note {
+	margin: 4px 0;
+	color: var(--vscode-descriptionForeground);
+	font-style: italic;
+}
+
+.log-idle {
+	margin: 0;
+	color: var(--vscode-descriptionForeground);
+	font-family: var(--vscode-font-family);
+}

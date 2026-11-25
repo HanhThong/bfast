@@ -1,0 +1,1041 @@
+{
+  "name": "bfast",
+  "displayName": "BFAST",
+  "description": "BFAST Model",
+  "publisher": "HanhThong",
+  "license": "Apache-2.0",
+  "homepage": "https://bfast.hanhthong.me/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HanhThong/bfast.git"
+  },
+  "bugs": {
+    "url": "https://github.com/HanhThong/bfast/issues"
+  },
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.134.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "BFAST runs the workspace's committed test command and stack tooling on a click, so it stays off in Restricted Mode."
+    }
+  },
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "bfast.openBoard",
+        "title": "Open Board",
+        "category": "BFAST",
+        "icon": "$(window)"
+      },
+      {
+        "command": "bfast.openTicket",
+        "title": "Open Ticket",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.filterTickets",
+        "title": "Filter Tickets",
+        "category": "BFAST",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "bfast.clearFilter",
+        "title": "Clear Ticket Filter",
+        "category": "BFAST",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "bfast.hideTestCases",
+        "title": "Hide Test Cases",
+        "category": "BFAST",
+        "icon": "$(eye-closed)"
+      },
+      {
+        "command": "bfast.showTestCases",
+        "title": "Show Test Cases",
+        "category": "BFAST",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "bfast.refreshTickets",
+        "title": "Refresh Tickets",
+        "category": "BFAST",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "bfast.shortenTicketFolders",
+        "title": "Shorten Long Ticket Folder Names",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.openAgents",
+        "title": "Edit an agent",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.newAgent",
+        "title": "New agent",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.setAiApiKey",
+        "title": "Set AI API key",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.setAiOauthToken",
+        "title": "Set AI OAuth token",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.clearAiCredentials",
+        "title": "Clear AI credentials",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.openSettings",
+        "title": "Open Settings",
+        "category": "BFAST",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "bfast.newEpic",
+        "title": "New Epic",
+        "category": "BFAST",
+        "icon": "$(add)"
+      },
+      {
+        "command": "bfast.newSubEpic",
+        "title": "New Sub-epic",
+        "category": "BFAST",
+        "icon": "$(add)"
+      },
+      {
+        "command": "bfast.convertToStory",
+        "title": "Change Type to Story",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.convertToEpic",
+        "title": "Change Type to Epic",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.newStory",
+        "title": "New Story",
+        "category": "BFAST",
+        "icon": "$(add)"
+      },
+      {
+        "command": "bfast.newAc",
+        "title": "New Acceptance Criterion",
+        "category": "BFAST",
+        "icon": "$(add)"
+      },
+      {
+        "command": "bfast.newTestCase",
+        "title": "New Test Case",
+        "category": "BFAST",
+        "icon": "$(add)"
+      },
+      {
+        "command": "bfast.generateStories",
+        "title": "Generate Stories...",
+        "category": "BFAST",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "bfast.generateAcceptanceCriteria",
+        "title": "Generate Acceptance Criteria...",
+        "category": "BFAST",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "bfast.generateTestCases",
+        "title": "Generate Test Cases...",
+        "category": "BFAST",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "bfast.setStatus",
+        "title": "Set Status...",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.renameTicket",
+        "title": "Rename...",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.linkTicket",
+        "title": "Link to Ticket...",
+        "category": "BFAST",
+        "icon": "$(link)"
+      },
+      {
+        "command": "bfast.setTestCaseService",
+        "title": "Set Service...",
+        "category": "BFAST",
+        "icon": "$(server)"
+      },
+      {
+        "command": "bfast.deleteTicket",
+        "title": "Delete...",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.revealTicket",
+        "title": "Reveal in File Explorer",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.runTests",
+        "title": "Run Tests",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.implement",
+        "title": "Implement...",
+        "category": "BFAST",
+        "icon": "$(tools)"
+      },
+      {
+        "command": "bfast.commitTicket",
+        "title": "Commit Ticket...",
+        "category": "BFAST",
+        "icon": "$(git-commit)"
+      },
+      {
+        "command": "bfast.createEnvironment",
+        "title": "Create Environment",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.newEnvironment",
+        "title": "New Environment...",
+        "category": "BFAST",
+        "icon": "$(add)"
+      },
+      {
+        "command": "bfast.createMasterEnvironment",
+        "title": "Create Master Environment",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.refreshEnvironments",
+        "title": "Refresh Environments",
+        "category": "BFAST",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "bfast.startEnvironment",
+        "title": "Start Environment",
+        "category": "BFAST",
+        "icon": "$(play)"
+      },
+      {
+        "command": "bfast.stopEnvironment",
+        "title": "Stop Environment",
+        "category": "BFAST",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "bfast.openEnvironmentWindow",
+        "title": "Open in New Window",
+        "category": "BFAST",
+        "icon": "$(multiple-windows)"
+      },
+      {
+        "command": "bfast.revealEnvironment",
+        "title": "Reveal Environment in File Explorer",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.deleteEnvironment",
+        "title": "Delete Environment...",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.openEnvironmentPort",
+        "title": "Open Port in VS Code",
+        "category": "BFAST",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "bfast.openEnvironmentPortInBrowser",
+        "title": "Open Port in Browser",
+        "category": "BFAST",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "bfast.forwardEnvironmentPorts",
+        "title": "Forward Ports",
+        "category": "BFAST",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "bfast.forwardEnvironmentPort",
+        "title": "Forward Port",
+        "category": "BFAST",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "bfast.openContainerLog",
+        "title": "Open Container Log",
+        "category": "BFAST",
+        "icon": "$(output)"
+      },
+      {
+        "command": "bfast.runScan",
+        "title": "Run Scan",
+        "category": "BFAST",
+        "icon": "$(search)"
+      },
+      {
+        "command": "bfast.scanWorkspace",
+        "title": "Scan Workspace",
+        "category": "BFAST",
+        "icon": "$(search)"
+      },
+      {
+        "command": "bfast.openScanResults",
+        "title": "Open Scan Results",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.deployScanServer",
+        "title": "Deploy Scan Server",
+        "category": "BFAST",
+        "icon": "$(add)"
+      },
+      {
+        "command": "bfast.refreshScan",
+        "title": "Refresh Code Quality",
+        "category": "BFAST",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "bfast.startScanServer",
+        "title": "Start Scan Server",
+        "category": "BFAST",
+        "icon": "$(play)"
+      },
+      {
+        "command": "bfast.stopScanServer",
+        "title": "Stop Scan Server",
+        "category": "BFAST",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "bfast.provisionScanServer",
+        "title": "Re-provision Scan Credentials",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.openScanServer",
+        "title": "Open Scan Server in Browser",
+        "category": "BFAST",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "bfast.setSonarQubeToken",
+        "title": "Set SonarQube Token",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.showSonarQubeAdminPassword",
+        "title": "Show SonarQube admin password",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.copyScanCredential",
+        "title": "Copy Scan Credential…",
+        "category": "BFAST",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "bfast.clearScanCredentials",
+        "title": "Clear scan credentials",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.revealScanFolder",
+        "title": "Reveal Scan Folder in File Explorer",
+        "category": "BFAST"
+      },
+      {
+        "command": "bfast.removeScanServer",
+        "title": "Remove Scan Server...",
+        "category": "BFAST"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "bfast",
+          "title": "BFAST",
+          "icon": "media/bfast.svg"
+        }
+      ]
+    },
+    "views": {
+      "bfast": [
+        {
+          "id": "bfast.sidebar",
+          "name": "Tickets",
+          "icon": "media/bfast.svg"
+        },
+        {
+          "id": "bfast.environments",
+          "name": "Environments",
+          "icon": "media/bfast.svg"
+        },
+        {
+          "id": "bfast.scan",
+          "name": "Code Quality",
+          "icon": "media/bfast.svg"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "bfast.sidebar",
+        "contents": "No folder is open, so BFAST has nowhere to store its settings.\n[Open Folder](command:workbench.action.files.openFolder)",
+        "when": "workbenchState == empty"
+      },
+      {
+        "view": "bfast.sidebar",
+        "contents": "BFAST is not set up for this workspace yet.\nChoose the folder holding the tracker store and the name to show on ticket history.\n[Init settings](command:bfast.openSettings)",
+        "when": "workbenchState != empty && !bfast.configured"
+      },
+      {
+        "view": "bfast.environments",
+        "contents": "Set up BFAST before creating environments.\n[Init settings](command:bfast.openSettings)",
+        "when": "workbenchState != empty && !bfast.configured"
+      },
+      {
+        "view": "bfast.environments",
+        "contents": "No environments yet.\nRight-click a story or an epic in Tickets and choose “Create Environment”, or:\n[New Environment](command:bfast.newEnvironment)\nFor the workspace folder itself, no ticket needed:\n[Create Master Environment](command:bfast.createMasterEnvironment)\nPrepare your compose file first — see docs/environments/docker-compose.md.",
+        "when": "bfast.configured"
+      },
+      {
+        "view": "bfast.scan",
+        "contents": "Set up BFAST before scanning.\n[Init settings](command:bfast.openSettings)",
+        "when": "workbenchState != empty && !bfast.configured"
+      },
+      {
+        "view": "bfast.scan",
+        "contents": "No scan server yet.\nBFAST can deploy SonarQube for this workspace, or point at one you already have.\n[Deploy Scan Server](command:bfast.deployScanServer)\nCheck the Scan tab in settings first — see docs/scan/configuration.md.",
+        "when": "bfast.configured"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "bfast.newEpic",
+          "when": "view == bfast.sidebar && bfast.configured",
+          "group": "navigation@0"
+        },
+        {
+          "command": "bfast.filterTickets",
+          "when": "view == bfast.sidebar && bfast.configured",
+          "group": "navigation@1"
+        },
+        {
+          "command": "bfast.clearFilter",
+          "when": "view == bfast.sidebar && bfast.configured && bfast.hasFilter",
+          "group": "navigation@2"
+        },
+        {
+          "command": "bfast.hideTestCases",
+          "when": "view == bfast.sidebar && bfast.configured && !bfast.testCasesHidden",
+          "group": "navigation@2"
+        },
+        {
+          "command": "bfast.showTestCases",
+          "when": "view == bfast.sidebar && bfast.configured && bfast.testCasesHidden",
+          "group": "navigation@2"
+        },
+        {
+          "command": "bfast.refreshTickets",
+          "when": "view == bfast.sidebar && bfast.configured",
+          "group": "navigation@3"
+        },
+        {
+          "command": "bfast.openBoard",
+          "when": "view == bfast.sidebar && bfast.configured",
+          "group": "navigation@4"
+        },
+        {
+          "command": "bfast.openSettings",
+          "when": "view == bfast.sidebar",
+          "group": "navigation@5"
+        },
+        {
+          "command": "bfast.shortenTicketFolders",
+          "when": "view == bfast.sidebar && bfast.configured",
+          "group": "1_maintenance@0"
+        },
+        {
+          "command": "bfast.newEnvironment",
+          "when": "view == bfast.environments && bfast.configured",
+          "group": "navigation@0"
+        },
+        {
+          "command": "bfast.refreshEnvironments",
+          "when": "view == bfast.environments && bfast.configured",
+          "group": "navigation@1"
+        },
+        {
+          "command": "bfast.deployScanServer",
+          "when": "view == bfast.scan && bfast.configured",
+          "group": "navigation@0"
+        },
+        {
+          "command": "bfast.scanWorkspace",
+          "when": "view == bfast.scan && bfast.configured",
+          "group": "navigation@1"
+        },
+        {
+          "command": "bfast.refreshScan",
+          "when": "view == bfast.scan && bfast.configured",
+          "group": "navigation@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "bfast.openTicket",
+          "when": "false"
+        },
+        {
+          "command": "bfast.openBoard",
+          "when": "bfast.configured"
+        },
+        {
+          "command": "bfast.filterTickets",
+          "when": "bfast.configured"
+        },
+        {
+          "command": "bfast.clearFilter",
+          "when": "bfast.configured"
+        },
+        {
+          "command": "bfast.refreshTickets",
+          "when": "bfast.configured"
+        },
+        {
+          "command": "bfast.shortenTicketFolders",
+          "when": "bfast.configured"
+        },
+        {
+          "command": "bfast.newEpic",
+          "when": "bfast.configured"
+        },
+        {
+          "command": "bfast.newSubEpic",
+          "when": "false"
+        },
+        {
+          "command": "bfast.convertToStory",
+          "when": "false"
+        },
+        {
+          "command": "bfast.convertToEpic",
+          "when": "false"
+        },
+        {
+          "command": "bfast.newStory",
+          "when": "false"
+        },
+        {
+          "command": "bfast.newAc",
+          "when": "false"
+        },
+        {
+          "command": "bfast.newTestCase",
+          "when": "false"
+        },
+        {
+          "command": "bfast.setStatus",
+          "when": "false"
+        },
+        {
+          "command": "bfast.renameTicket",
+          "when": "false"
+        },
+        {
+          "command": "bfast.linkTicket",
+          "when": "false"
+        },
+        {
+          "command": "bfast.deleteTicket",
+          "when": "false"
+        },
+        {
+          "command": "bfast.revealTicket",
+          "when": "false"
+        },
+        {
+          "command": "bfast.generateStories",
+          "when": "false"
+        },
+        {
+          "command": "bfast.generateAcceptanceCriteria",
+          "when": "false"
+        },
+        {
+          "command": "bfast.generateTestCases",
+          "when": "false"
+        },
+        {
+          "command": "bfast.runTests",
+          "when": "false"
+        },
+        {
+          "command": "bfast.implement",
+          "when": "false"
+        },
+        {
+          "command": "bfast.commitTicket",
+          "when": "false"
+        },
+        {
+          "command": "bfast.createEnvironment",
+          "when": "false"
+        },
+        {
+          "command": "bfast.startEnvironment",
+          "when": "false"
+        },
+        {
+          "command": "bfast.stopEnvironment",
+          "when": "false"
+        },
+        {
+          "command": "bfast.openEnvironmentWindow",
+          "when": "false"
+        },
+        {
+          "command": "bfast.revealEnvironment",
+          "when": "false"
+        },
+        {
+          "command": "bfast.deleteEnvironment",
+          "when": "false"
+        },
+        {
+          "command": "bfast.openEnvironmentPort",
+          "when": "false"
+        },
+        {
+          "command": "bfast.openEnvironmentPortInBrowser",
+          "when": "false"
+        },
+        {
+          "command": "bfast.forwardEnvironmentPorts",
+          "when": "false"
+        },
+        {
+          "command": "bfast.forwardEnvironmentPort",
+          "when": "false"
+        },
+        {
+          "command": "bfast.openContainerLog",
+          "when": "false"
+        },
+        {
+          "command": "bfast.newEnvironment",
+          "when": "bfast.configured"
+        },
+        {
+          "command": "bfast.createMasterEnvironment",
+          "when": "bfast.configured"
+        },
+        {
+          "command": "bfast.refreshEnvironments",
+          "when": "bfast.configured"
+        },
+        {
+          "command": "bfast.runScan",
+          "when": "false"
+        },
+        {
+          "command": "bfast.openScanResults",
+          "when": "false"
+        },
+        {
+          "command": "bfast.startScanServer",
+          "when": "false"
+        },
+        {
+          "command": "bfast.stopScanServer",
+          "when": "false"
+        },
+        {
+          "command": "bfast.openScanServer",
+          "when": "false"
+        },
+        {
+          "command": "bfast.revealScanFolder",
+          "when": "false"
+        },
+        {
+          "command": "bfast.removeScanServer",
+          "when": "false"
+        },
+        {
+          "command": "bfast.scanWorkspace",
+          "when": "bfast.configured"
+        },
+        {
+          "command": "bfast.deployScanServer",
+          "when": "bfast.configured"
+        },
+        {
+          "command": "bfast.provisionScanServer",
+          "when": "bfast.configured"
+        },
+        {
+          "command": "bfast.copyScanCredential",
+          "when": "bfast.configured"
+        },
+        {
+          "command": "bfast.refreshScan",
+          "when": "bfast.configured"
+        },
+        {
+          "command": "bfast.hideTestCases",
+          "when": "bfast.configured && !bfast.testCasesHidden"
+        },
+        {
+          "command": "bfast.showTestCases",
+          "when": "bfast.configured && bfast.testCasesHidden"
+        },
+        {
+          "command": "bfast.setTestCaseService",
+          "when": "false"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "bfast.newSubEpic",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:epic/",
+          "group": "1_create@0"
+        },
+        {
+          "command": "bfast.newStory",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:epic/",
+          "group": "1_create@1"
+        },
+        {
+          "command": "bfast.newAc",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:story/",
+          "group": "1_create@2"
+        },
+        {
+          "command": "bfast.newTestCase",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:(epic|story|ac)/",
+          "group": "1_create@3"
+        },
+        {
+          "command": "bfast.generateStories",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:epic/",
+          "group": "1_create@4"
+        },
+        {
+          "command": "bfast.generateAcceptanceCriteria",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:story/",
+          "group": "1_create@5"
+        },
+        {
+          "command": "bfast.generateTestCases",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:ac/",
+          "group": "1_create@6"
+        },
+        {
+          "command": "bfast.setStatus",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:/",
+          "group": "2_modify@1"
+        },
+        {
+          "command": "bfast.renameTicket",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:/",
+          "group": "2_modify@2"
+        },
+        {
+          "command": "bfast.convertToStory",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:epic/",
+          "group": "2_modify@3"
+        },
+        {
+          "command": "bfast.convertToEpic",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:story/",
+          "group": "2_modify@3"
+        },
+        {
+          "command": "bfast.linkTicket",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:/",
+          "group": "2_modify@4"
+        },
+        {
+          "command": "bfast.setTestCaseService",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:testcase/",
+          "group": "2_modify@5"
+        },
+        {
+          "command": "bfast.revealTicket",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:/",
+          "group": "3_open@1"
+        },
+        {
+          "command": "bfast.deleteTicket",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:/",
+          "group": "9_delete@1"
+        },
+        {
+          "command": "bfast.createEnvironment",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:(epic|story)/",
+          "group": "4_environment@1"
+        },
+        {
+          "command": "bfast.runTests",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:/",
+          "group": "5_tests@1"
+        },
+        {
+          "command": "bfast.implement",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:/",
+          "group": "6_implement@1"
+        },
+        {
+          "command": "bfast.commitTicket",
+          "when": "view == bfast.sidebar && viewItem =~ /^ticket:/",
+          "group": "6_implement@2"
+        },
+        {
+          "command": "bfast.startEnvironment",
+          "when": "view == bfast.environments && viewItem =~ /^environment:(stopped|error)/",
+          "group": "inline@1"
+        },
+        {
+          "command": "bfast.stopEnvironment",
+          "when": "view == bfast.environments && viewItem =~ /^environment:running/",
+          "group": "inline@1"
+        },
+        {
+          "command": "bfast.startEnvironment",
+          "when": "view == bfast.environments && viewItem =~ /^environment:(stopped|error)/",
+          "group": "1_run@1"
+        },
+        {
+          "command": "bfast.stopEnvironment",
+          "when": "view == bfast.environments && viewItem =~ /^environment:running/",
+          "group": "1_run@2"
+        },
+        {
+          "command": "bfast.openEnvironmentWindow",
+          "when": "view == bfast.environments && viewItem =~ /^environment:(stopped|running|error|unknown)$/",
+          "group": "2_open@1"
+        },
+        {
+          "command": "bfast.revealEnvironment",
+          "when": "view == bfast.environments && viewItem =~ /^environment:(stopped|running|error|unknown)$/",
+          "group": "2_open@2"
+        },
+        {
+          "command": "bfast.deleteEnvironment",
+          "when": "view == bfast.environments && viewItem =~ /^environment:(stopped|running|error)/",
+          "group": "9_delete@1"
+        },
+        {
+          "command": "bfast.openEnvironmentPort",
+          "when": "view == bfast.environments && viewItem == environmentPort",
+          "group": "inline@1"
+        },
+        {
+          "command": "bfast.openEnvironmentPort",
+          "when": "view == bfast.environments && viewItem == environmentPort",
+          "group": "1_open@1"
+        },
+        {
+          "command": "bfast.openEnvironmentPortInBrowser",
+          "when": "view == bfast.environments && viewItem == environmentPort",
+          "group": "1_open@2"
+        },
+        {
+          "command": "bfast.forwardEnvironmentPorts",
+          "when": "view == bfast.environments && viewItem =~ /^environment:/",
+          "group": "2_open@3"
+        },
+        {
+          "command": "bfast.forwardEnvironmentPort",
+          "when": "view == bfast.environments && viewItem == environmentPort",
+          "group": "1_open@3"
+        },
+        {
+          "command": "bfast.openContainerLog",
+          "when": "view == bfast.environments && viewItem == environmentContainer",
+          "group": "inline@1"
+        },
+        {
+          "command": "bfast.openContainerLog",
+          "when": "view == bfast.environments && viewItem == environmentContainer",
+          "group": "1_open@1"
+        },
+        {
+          "command": "bfast.runScan",
+          "when": "view == bfast.environments && viewItem =~ /^environment:(stopped|running|error|unknown)/",
+          "group": "3_scan@1"
+        },
+        {
+          "command": "bfast.startScanServer",
+          "when": "view == bfast.scan && viewItem =~ /^scanServer:(stopped|error)/",
+          "group": "inline@1"
+        },
+        {
+          "command": "bfast.stopScanServer",
+          "when": "view == bfast.scan && viewItem =~ /^scanServer:running/",
+          "group": "inline@1"
+        },
+        {
+          "command": "bfast.deployScanServer",
+          "when": "view == bfast.scan && viewItem =~ /^scanServer:absent/",
+          "group": "1_run@1"
+        },
+        {
+          "command": "bfast.startScanServer",
+          "when": "view == bfast.scan && viewItem =~ /^scanServer:(stopped|error)/",
+          "group": "1_run@2"
+        },
+        {
+          "command": "bfast.stopScanServer",
+          "when": "view == bfast.scan && viewItem =~ /^scanServer:running/",
+          "group": "1_run@3"
+        },
+        {
+          "command": "bfast.provisionScanServer",
+          "when": "view == bfast.scan && viewItem =~ /^scanServer:(running|external)/",
+          "group": "1_run@4"
+        },
+        {
+          "command": "bfast.scanWorkspace",
+          "when": "view == bfast.scan && viewItem =~ /^scanServer:/",
+          "group": "2_open@1"
+        },
+        {
+          "command": "bfast.openScanServer",
+          "when": "view == bfast.scan && viewItem =~ /^scanServer:(running|external)/",
+          "group": "2_open@2"
+        },
+        {
+          "command": "bfast.showSonarQubeAdminPassword",
+          "when": "view == bfast.scan && viewItem =~ /^scanServer:(running|stopped|error)/",
+          "group": "2_open@3"
+        },
+        {
+          "command": "bfast.revealScanFolder",
+          "when": "view == bfast.scan && viewItem =~ /^scanServer:(running|stopped|error)/",
+          "group": "2_open@4"
+        },
+        {
+          "command": "bfast.removeScanServer",
+          "when": "view == bfast.scan && viewItem =~ /^scanServer:(stopped|running|error)/",
+          "group": "9_delete@1"
+        },
+        {
+          "command": "bfast.openScanServer",
+          "when": "view == bfast.scan && viewItem == scanEndpoint",
+          "group": "inline@1"
+        },
+        {
+          "command": "bfast.copyScanCredential",
+          "when": "view == bfast.scan && viewItem =~ /^scanCredential:set/",
+          "group": "inline@1"
+        },
+        {
+          "command": "bfast.setSonarQubeToken",
+          "when": "view == bfast.scan && viewItem =~ /^scanCredential:/",
+          "group": "1_open@1"
+        },
+        {
+          "command": "bfast.copyScanCredential",
+          "when": "view == bfast.scan && viewItem =~ /^scanCredential:set/",
+          "group": "1_open@2"
+        },
+        {
+          "command": "bfast.clearScanCredentials",
+          "when": "view == bfast.scan && viewItem =~ /^scanCredential:set/",
+          "group": "9_delete@1"
+        },
+        {
+          "command": "bfast.openScanResults",
+          "when": "view == bfast.scan && viewItem =~ /^scanRun:/",
+          "group": "1_open@1"
+        }
+      ]
+    },
+    "customEditors": [
+      {
+        "viewType": "bfast.board",
+        "displayName": "BFAST Board",
+        "selector": [
+          {
+            "filenamePattern": "bfast-ticket:/**"
+          }
+        ],
+        "priority": "default"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "vsix": "npx --yes @vscode/vsce package --no-dependencies",
+    "package": "npm run compile:tsc && node esbuild.js --production",
+    "compile": "npm run compile:tsc && npm run compile:web",
+    "compile:tsc": "tsc -p ./",
+    "compile:web": "node esbuild.js",
+    "typecheck:web": "tsc -p src/webview",
+    "watch:tsc": "tsc -watch -p ./",
+    "watch:web": "node esbuild.js --watch",
+    "pretest": "npm run compile && npm run typecheck:web && npm run verify:esm && npm run verify:webview && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test",
+    "test:unit": "npm run compile:tsc && node scripts/run-unit-tests.js",
+    "verify:webview": "node scripts/verify-webview-bundle.js",
+    "verify:esm": "node -e \"const s=require('fs').readFileSync('out/ai/claudeSdkModule.js','utf8'); if(!s.includes('import(')){console.error('dynamic import() was compiled away — the Agent SDK provider would fail at runtime only'); process.exit(1)} console.log('dynamic import() preserved')\""
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.x",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "@types/vscode": "^1.134.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.0.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.5.0",
+    "marked": "^18.0.11",
+    "mermaid": "11.17.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.61.1"
+  },
+  "overrides": {
+    "diff": "^8.0.4",
+    "serialize-javascript": "^7.0.6"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.251"
+  }
+}

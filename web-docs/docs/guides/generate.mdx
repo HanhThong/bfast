@@ -1,0 +1,160 @@
+---
+title: Break a ticket down
+---
+
+# Break a ticket down
+
+The Generate commands have the AI propose a ticket's children, let you edit the list, then
+create each child and write its description.
+
+| Right-click on | Command | Creates |
+|---|---|---|
+| An epic | **Generate Stories...** | stories |
+| A story | **Generate Acceptance Criteria...** | acceptance criteria |
+| An acceptance criterion | **Generate Test Cases...** | test cases |
+
+Each command opens a **generate tab** titled, for example, `Generate stories — EP-3`. Asking
+again for the same ticket reveals the tab that is already open.
+
+Before you start, set up the [AI assistant](./ai-assistant.mdx#set-it-up). The parent ticket
+should have a description: it is what the agent breaks down.
+
+## Walkthrough: stories for an epic
+
+This example breaks the **Product reviews** epic into stories.
+
+### 1. Open the generate tab
+
+1. In the **Tickets** view, right-click the epic.
+2. Click **Generate Stories...**.
+
+![The epic's context menu with Generate Stories...](/img/screens/generate-menu.png)
+
+### 2. Fill in the form
+
+The left column is the form; the right column will show the run's progress.
+
+1. **Agent** — the role that proposes and writes the stories. The hint under it names the
+   skill that will write each story.
+2. **Model** — leave on *Default*, or pick another model for this tab's runs.
+3. **Instruction** (optional) — what to focus on, such as
+   `MVP only: no moderation dashboard yet. Keep it to four stories at most.`
+4. Click **Generate**.
+
+![The generate tab's form with an instruction typed](/img/screens/generate-form.png)
+
+### 3. Watch the planning run
+
+The agent reads the epic — and whatever else it needs in the workspace — and proposes titles.
+The status beside the button says *Proposing stories…*, and the **Log** on the right shows each
+step. Click **Stop** to end the run.
+
+![Planning in progress: the Stop button and the log](/img/screens/generate-planning.png)
+
+### 4. Review the list
+
+The proposed titles appear under **N proposed — untick anything you do not want**, all ticked.
+The status says *Waiting for you*. **Nothing has been created yet.**
+
+![The proposed stories, all ticked, with Ask for changes, Create, Update list and Discard](/img/screens/generate-review.png)
+
+To change the list rather than just trim it:
+
+1. Type a follow-up in **Ask for changes** — `split the third one`,
+   `merge the empty state into the product page story, and add one for editing my own review`.
+2. Click **Update list**.
+
+   ![A follow-up typed under Ask for changes](/img/screens/generate-ask.png)
+
+3. The agent answers in the same conversation, and the list is **replaced** with the updated
+   one. Your follow-up stays on screen, marked **You:**. Repeat as often as you like.
+
+   ![The updated list, with the follow-up shown above Ask for changes](/img/screens/generate-review-refined.png)
+
+Then:
+
+1. **Untick** any title you do not want. The button's count follows — **Create 4 stories**.
+2. Click **Create N stories**.
+
+![One title unticked; the button now reads Create 4 stories](/img/screens/generate-untick.png)
+
+**Discard** ends the run without creating anything.
+
+### 5. Watch the writing
+
+Each kept title becomes a ticket, in the proposed order, so the ids follow the order the agent
+suggested. Descriptions are written in parallel, up to `ai.concurrency` at a time.
+
+- **Agents** lists one row per story, with what it is doing now. A row turns green when its
+  ticket is created, and shows the new id.
+- **Created** lists the tickets as they land.
+- **Log** prefixes every line with the story it came from.
+- The status counts *Written 1 so far…*; the red **Stop** cancels the rest.
+
+![Writing in progress: one agent finished, three running, and the Created list](/img/screens/generate-writing.png)
+
+### 6. Done
+
+The status says **Finished** and **Created** lists every new ticket with its id. They are
+already in the tree.
+
+![The finished tab: four agents finished and four stories created](/img/screens/generate-done.png)
+
+![The new stories under the epic in the Tickets view](/img/screens/generate-tree.png)
+
+To ask for more later, leave **Continue the previous conversation** ticked and click
+**Run again**: the agent is told which titles are already tickets and proposes the missing
+ones only. Untick it to start a fresh conversation.
+
+## Acceptance criteria and test cases
+
+The same tab, the same steps:
+
+- Right-click a **story** → **Generate Acceptance Criteria...**
+- Right-click an **acceptance criterion** → **Generate Test Cases...**
+
+For test cases, the agent picker offers only roles that write test cases — **Test Engineer**
+in a freshly seeded workspace.
+
+![The generate tab for test cases under an acceptance criterion](/img/screens/generate-tc-form.png)
+
+### Rules for test cases
+
+- The criterion **must contain Given, When and Then**. A test case's preconditions, steps and
+  expected result are those three; without them the agent would have to invent the test.
+  BFAST refuses before any run.
+- The criterion's **story is sent as context** too, because a criterion alone names neither
+  the screen nor the user.
+
+The number of test cases is the skill's decision: one per requirement the criterion states.
+
+### Generated acceptance criteria have no test case
+
+A generated criterion arrives with the usual **No test case yet** warning. Run
+**Generate Test Cases...** on it to add them.
+
+## What you should know
+
+- **Cancelling keeps what was created.** A ticket that exists when you press Stop stays. Ids
+  are never reused, so removing them would only leave gaps.
+- **A failed description still creates its ticket**, empty. You chose the title; one flaky run
+  does not discard the rest of the batch. Open the ticket and run the AI Assistant on it.
+- **A title that already exists is dropped** from a new proposal, with a line in the log.
+- **Closing the tab stops the run.** A tab restored after a reload comes back to its form.
+- **One batch per ticket and child type** at a time. Batches under different parents can run
+  together and share the `ai.concurrency` cap.
+
+## Which skills run
+
+| Pass | Skill | Chosen by |
+|---|---|---|
+| Plan | `break-down-epic`, `break-down-story`, `break-down-acceptance-criterion` | the **parent's** type |
+| Write | `write-story`, `write-acceptance-criterion`, `write-test-case` | the **child's** type |
+
+If the chosen agent has no plan skill of its own, the one shipped with BFAST is used. See
+[Agents and skills](./agents-and-skills.mdx).
+
+## Provenance
+
+Each created ticket's `created` history entry carries a comment naming the agent, the
+instruction you gave — including your follow-ups — the model and the cost.

@@ -1,0 +1,33 @@
+{
+    "compilerOptions": {
+        "module": "Node16",
+        "target": "ES2022",
+        "outDir": "out",
+        "lib": [
+            "ES2022"
+        ],
+        "types": [
+            "node",
+            "mocha",
+        ],
+        /* The Claude Agent SDK drags in dependency .d.ts files that reference
+           DOM types this project has no lib for. Their internals are not ours
+           to type-check; our own code is still fully checked. */
+        "skipLibCheck": true,
+        "sourceMap": true,
+        "rootDir": "src",
+        "strict": true, /* enable all strict type-checking options */
+        /* Additional Checks */
+        // "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
+        // "noFallthroughCasesInSwitch": true, /* Report errors for fallthrough cases in switch statement. */
+        // "noUnusedParameters": true,  /* Report errors on unused parameters. */
+    },
+    /* The webview is browser code with JSX; it has its own tsconfig and is
+       bundled by esbuild, not compiled by this project. */
+    "exclude": [
+        "node_modules",
+        "out",
+        "src/webview",
+        "web-docs"
+    ]
+}

@@ -1,0 +1,136 @@
+---
+title: Quick start
+---
+
+# Quick start
+
+This walkthrough takes a fresh repository to a small tracker with one epic, a story written by
+the AI assistant and a set of generated acceptance criteria. It takes about ten minutes.
+
+The screenshots on this page come from a demo repository, *Acme Shop*, opened in VS Code with
+BFAST installed.
+
+## 1. Open a folder
+
+BFAST stores its settings per workspace, so it needs a folder.
+
+1. In VS Code, choose **File → Open Folder…** and open your repository.
+2. Click the **B** icon in the activity bar, on the left edge of the window.
+
+The BFAST side bar opens with three sections: **Tickets**, **Environments** and
+**Code Quality**. Until the workspace is set up, each of them shows an **Init settings** button.
+
+![The BFAST side bar in a workspace that is not set up yet, with an Init settings button in each section](/img/screens/start-welcome.png)
+
+## 2. Initialise the settings
+
+1. Click **Init settings** in any of the three sections. The **BFAST Settings** form opens in an
+   editor tab, on its **General** tab.
+2. Leave **Tracker store folder** at `.tracker`, or type another folder relative to the
+   workspace root. **Browse…** picks one with a dialog; it must be inside the workspace.
+3. In **Your name**, type the name to record as the author of your ticket changes, for example
+   `Alex`. It is pre-filled with your operating-system user name.
+
+   ![The General tab of the settings form, with .tracker as the tracker folder and Alex as the name](/img/screens/start-settings-general.png)
+
+4. Click **Save**.
+
+The form says **Settings saved.** and stays open, and a notification confirms the file it wrote.
+In the side bar, the **Tickets** title bar now has its buttons and the tree is empty, waiting for
+the first epic.
+
+![After saving: the settings form shows "Settings saved." and the Tickets section has its toolbar](/img/screens/start-settings-saved.png)
+
+BFAST wrote `.vscode/bfast.json` and created the tracker folder:
+
+```json title=".vscode/bfast.json"
+{
+  "trackerFolder": ".tracker",
+  "userName": "Alex"
+}
+```
+
+Close the settings tab with **Cancel** or its **×** when you are done.
+
+:::tip[Commit this file]
+`.vscode/bfast.json` holds no secrets and is meant to be shared. The whole team then uses the
+same tracker folder, test command and environment contract.
+:::
+
+## 3. Create an epic
+
+The **Tickets** title bar holds, from left to right: **New Epic** (**+**), **Filter Tickets**,
+**Refresh Tickets**, **Open Board**, **Open Settings** (gear) and **…**.
+
+![The Tickets title bar of a configured workspace](/img/screens/start-empty-tree.png)
+
+1. Click **+** (**New Epic**). An input box opens at the top of the window.
+2. Type a title, for example `Authentication`, and press **Enter**.
+
+   ![The input box asking for the title of the new epic](/img/screens/start-new-epic-input.png)
+
+The epic `EP-1` appears in the tree, and its **board** opens in an editor tab. On disk it is the
+folder `.tracker/EP-1-Authentication/`.
+
+![The new epic EP-1 in the tree, with its board open: no description yet, History 1](/img/screens/start-first-board.png)
+
+## 4. Write the description
+
+1. On the board, click **Edit** (top right). The description becomes a text area with a
+   formatting toolbar.
+2. Type a description in markdown. Use the toolbar for the text level (Normal, Heading 1–6),
+   **B**old, *I*talic, U̲nderline, bullets and images.
+3. Click **Save**, or press **Ctrl+Enter**.
+
+Paste or drop an image into the text area and it is stored in the ticket's own `assets/` folder.
+See [The board](../guides/board.mdx) for every control.
+
+## 5. Let the AI assistant write it instead
+
+With the `claude` CLI installed and signed in:
+
+1. Click **AI Assistant** on the board.
+2. Pick an **agent** — for example *Business Analyst*. The panel names the skill that will run
+   (`write-epic` for an epic).
+3. Optionally type an instruction, such as `Focus on email sign-in; SSO is out of scope`.
+4. Click **Generate**.
+
+The activity log shows what the agent is doing. When it finishes:
+
+- If the description was empty, the answer lands in the editor.
+- If there was text already, you get a **diff** with **Approve**, **Rewrite** and **Cancel**.
+
+Nothing is on disk until you press **Save**. See [AI assistant](../guides/ai-assistant.mdx).
+
+## 6. Break the epic into stories
+
+1. Right-click the epic in the tree → **Generate Stories…**. A generate tab opens.
+2. Pick an agent, add an instruction if you like, and start.
+3. Review the proposed titles. Untick the ones you do not want, or type a follow-up such as
+   `split the third one` to have the list updated.
+4. Click **Create N stories**. Each story is created in the proposed order and its description is
+   written, several at a time.
+
+Repeat on a story with **Generate Acceptance Criteria…**, and on a criterion with
+**Generate Test Cases…**. See [Generate](../guides/generate.mdx).
+
+## 7. Move a ticket along
+
+1. Right-click a ticket → **Set Status…**.
+2. Pick **To do**, **In progress**, **In review**, **Done** or **Blocked**. The current one is
+   marked *current*.
+
+The icon colour in the tree follows the status, the board's status pill changes, and the change
+is recorded in the ticket's history.
+
+## What next?
+
+| You want to | Read |
+|---|---|
+| Understand ids, folders and statuses | [Core concepts](./concepts.mdx) |
+| Learn every tree command | [Tickets](../guides/tickets.mdx) |
+| Give each story a running stack | [Environments](../guides/environments.mdx) |
+| Run test cases and see videos on the board | [Run tests](../guides/run-tests.mdx) |
+| Scan code with SonarQube | [Code quality](../guides/code-quality.mdx) |
+| Hand a ticket to a coding agent | [Implement](../guides/implement.mdx) |
+| Connect Claude Code or another agent to the tracker | [MCP server](../guides/mcp-server.mdx) |

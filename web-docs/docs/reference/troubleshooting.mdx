@@ -1,0 +1,219 @@
+---
+title: Troubleshooting
+---
+
+# Troubleshooting and FAQ
+
+## Setup
+
+### Which version of BFAST do I have?
+
+Open **BFAST Settings** (the gear on the sidebar's title bar): the version is at the bottom left,
+beside **Cancel** and **Save**. The **Extensions** view shows it too, next to *BFAST*.
+
+### The sidebar shows only "Init settings"
+
+The workspace has no `.vscode/bfast.json`. Click **Init settings**, fill in the General tab
+and save. If the sidebar says no folder is open, open one first: BFAST stores its settings in
+the workspace.
+
+### I edited `bfast.json` by hand and nothing changed
+
+Click **Refresh Tickets**. Settings are re-read on refresh and on save from the form.
+
+### A value I typed in `bfast.json` is ignored
+
+Reading is forgiving: an invalid or out-of-range value is skipped and the default applies.
+Open the settings form — it shows the value in use and refuses invalid ones with a reason.
+
+## Tickets and the board
+
+### My save was refused
+
+The ticket changed on disk after you started editing — another tab, a teammate's commit, an AI
+run. Copy your text, cancel the edit, and apply it on top of the new version.
+
+### A ticket shows a warning in the tree
+
+See [Warnings in the tree](../guides/tickets.mdx#warnings-in-the-tree). A warning never hides
+a ticket.
+
+### How do I move a ticket to another parent?
+
+BFAST does not offer it. Create the ticket in the new place and delete the old one.
+
+### Git on Windows complains about a path that is too long
+
+Run **Shorten Long Ticket Folder Names** from the Tickets **…** menu. For worktrees, see
+[Long paths on Windows](../guides/environments.mdx#long-paths-on-windows).
+
+## AI assistant
+
+### The AI Assistant button is greyed out
+
+Hover it for the reason. Usually the `claude` CLI is not installed or not on the `PATH` seen
+by VS Code. Install it, sign in, and reload the window — or set `ai.executablePath`, or switch
+`ai.provider` to `claude-agent-sdk` and store a key with **BFAST: Set AI API key**.
+
+### A run stopped with a timeout
+
+It produced no output for longer than `ai.idleTimeout` (180 seconds by default). Raise it in
+**Settings → AI assistant**. A run that keeps reporting progress is never stopped, however
+long it takes.
+
+### The agent ignores my `CLAUDE.md`
+
+That is intended. BFAST runs do not load your Claude Code configuration — `CLAUDE.md`,
+settings or hooks. Put what the agent must know in the role or skill file.
+
+### Does the AI change my files?
+
+It cannot run commands or create files. It reads the workspace, returns a description into the
+editor's draft, and — only from a board, when you ask — may edit other tickets' description
+files, which is recorded in their history.
+
+### Generated text is in the wrong language
+
+Set **Settings → AI assistant → Language**.
+
+### "Generate Test Cases…" is refused
+
+The acceptance criterion must contain Given, When and Then.
+
+## Environments
+
+### Create Environment fails on the compose file
+
+Every configured compose file must exist in the **worktree**, which contains committed files
+only. Commit the file. Check your file against the
+[contract](../guides/compose-contract.mdx#checklist).
+
+### The second environment fails to start with a port conflict
+
+A host port is hard-coded somewhere in the compose file, or uses a `:-default` for a variable
+missing from `environments.portVariables`. Use `${VAR:?}` for every host port.
+
+### An environment shows `error`
+
+Expand it and open the log of the container that exited. The **BFAST Environments** output
+channel has the full command output.
+
+A container that exited with code **0** does not cause this: a one-shot service that finishes
+its work and stops — an install or a migration — is listed with a plain outline icon and the
+environment still shows `running`. Only a non-zero exit, a dead container or one stuck
+restarting turns it into `error`.
+
+### An environment shows `unknown`
+
+Docker cannot be queried. Start Docker.
+
+### My environments disappeared after changing `worktreesFolder`
+
+Changing the setting moves nothing. The list shows the folder configured now. Switch back,
+delete the environments, then change the setting.
+
+### Localhost links do not work in a remote window
+
+Right-click the environment → **Forward Ports**.
+
+## Tests
+
+### Run Tests says the feature is not configured
+
+Set `tests.command` in **Settings → Tests**.
+
+### Every test case fails immediately with exit code 127
+
+The shell could not find your command. Check `tests.cwd`, and that the tool is installed where
+the workspace runs — on the remote machine, in a remote window.
+
+### A run matched the wrong tests
+
+Put the id in the test's name and add a delimiter after `{{id}}` in the command, such as a
+trailing space, so `TC-1.1` does not match `TC-1.10`.
+
+### No video or trace appears
+
+Check that `tests.evidence` matches the files your tool writes, relative to `tests.cwd`, and
+that the tool actually wrote them **during** the run. Files older than the run are ignored.
+
+### The video does not play
+
+Use **Open** or **Reveal** on the file. Some builds of VS Code cannot decode certain formats
+inline; installing codecs does not help, because the player is the editor's own.
+
+When the editor has no decoder for a recording, BFAST converts it to VP8 with **ffmpeg** and
+plays that — the caption then says *converted to VP8 with ffmpeg on the extension host*. This
+needs `ffmpeg` on the `PATH` of the machine the extension runs on: in a remote window
+(Remote-SSH, WSL, a dev container) that is the **remote** machine, not the one you sit at.
+
+```bash
+sudo apt install ffmpeg
+```
+
+### "no decoder for V_VP9" under a Playwright video
+
+Playwright records VP9 from version 1.65 (earlier versions recorded VP8), and VS Code on Windows
+cannot decode VP9 at all. Install `ffmpeg` on the machine the extension runs on, as above, and
+open the run again — BFAST converts the video to VP8 on the fly and leaves the original file
+untouched. Without ffmpeg there, convert it yourself or watch it outside the editor:
+
+```bash
+ffmpeg -i TC-1.1.1.webm -c:v libvpx -b:v 2M TC-1.1.1.vp8.webm
+```
+
+## Code quality
+
+### Deploy fails on Linux mentioning `vm.max_map_count`
+
+Run the `sysctl` command BFAST shows, then deploy again.
+
+### A scan ends `unauthorized`
+
+For a deployed server, run **Re-provision Scan Credentials**. For an external one, run
+**BFAST: Set SonarQube Token** with a **user** token that can browse the project.
+
+### Run Scan is disabled for a ticket
+
+A scan needs a folder. Create the ticket's environment, or use **Scan Workspace**.
+
+### Every scan overwrites the previous one
+
+SonarQube Community Edition analyses a single branch per project. The history entry on each
+ticket records what was measured at the time.
+
+## Implement
+
+### Nothing happens, or an error about Claude Code
+
+Install the Claude Code extension, or set `implement.agent` to `claude-code-cli` and make sure
+`claude` is on your terminal's `PATH`. If the handoff fails after the prompt was built, the
+error offers **Copy Prompt**.
+
+## MCP server
+
+See [MCP server → Troubleshooting](../guides/mcp-server.mdx#troubleshooting).
+
+## FAQ
+
+### Do my teammates need BFAST to read tickets?
+
+No. Tickets are markdown and YAML files in the repository.
+
+### Is anything sent to a server?
+
+BFAST itself has no backend. The AI assistant sends prompts to Anthropic through the Claude
+CLI or SDK you configured. A scan sends analysis data to the SonarQube you chose.
+
+### Where are my API keys?
+
+In VS Code's secret storage, never in the repository.
+
+### Can I connect BFAST to another issue tracker?
+
+Not today. The tracker is the files in your repository.
+
+### Should I commit `.bfast/` and `.vscode/bfast.json`?
+
+Commit `.vscode/bfast.json`, `.bfast/agents/` and the templates in `.bfast/implement/`.
+`.bfast/test-results/` and `.bfast/implement/prompts/` are your team's choice.

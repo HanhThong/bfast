@@ -1,0 +1,93 @@
+---
+id: intro
+title: Introduction
+sidebar_position: 1
+slug: /intro
+---
+
+import {Banner, Parts, Workflow, Cards} from '@site/src/components/Landing';
+
+# What is BFAST?
+
+<Banner>
+
+A VS Code extension that puts a ticket tracker **inside your repository** — and
+takes every ticket from an **idea**, through a clear process of **controlled steps**, to a
+**finished product**.
+
+</Banner>
+
+## Tickets live in your repository
+
+BFAST adds a **B** icon to the activity bar. Its sidebar is a tree of tickets — epic → story →
+acceptance criterion → test case — and clicking a ticket opens the **BFAST board**, an editor
+tab for that ticket's description, history, test runs and design documents.
+
+Tickets are plain folders and files. They are reviewed in a pull request, travel with a
+branch, and still read without BFAST installed.
+
+```text
+.tracker/
+  EP-1-Authentication/                    Epic.mdx  metadata.yaml  history.md
+    ST-1.2-Sign_in_with_email/            Story.mdx …
+      AC-1.2.1-Wrong_password_error/      AC.mdx …
+        TC-1.2.1.1-Unknown_email/         TestCase.mdx …
+```
+
+## What the name means
+
+**BFAST** stands for **B**ackend, **F**rontend, **A**ssurance, **S**ecurity and **T**racker.
+Each letter names a part of delivering software, and each has its own home in the extension.
+A ticket is only finished when all five agree on it.
+
+<Parts detailed />
+
+## How a ticket moves through BFAST
+
+Six steps, each owned by one or two of the five parts. Pick a step to see it in the editor.
+
+<Workflow />
+
+## What you can do with it
+
+<Cards
+  items={[
+    {letter: 'T', title: 'Tickets', to: '/docs/guides/tickets', body: 'Create, filter, rename, re-status and delete tickets from a native tree.'},
+    {letter: 'T', title: 'The board', to: '/docs/guides/board', body: 'Edit a ticket’s markdown description with a toolbar and images, and read its history.'},
+    {letter: 'A', title: 'AI assistant', to: '/docs/guides/ai-assistant', body: 'Have an agent write or rewrite a description, reviewed as a diff before it lands.'},
+    {letter: 'T', title: 'Agents and skills', to: '/docs/guides/agents-and-skills', body: 'Own the roles and the writing rules as files under .bfast/agents/.'},
+    {letter: 'T', title: 'Break a ticket down', to: '/docs/guides/generate', body: 'Turn an epic into stories, a story into criteria, a criterion into test cases.'},
+    {letter: 'B', title: 'Design documents', to: '/docs/guides/design-documents', body: 'Keep ERDs, sequence diagrams and low level designs beside the ticket.'},
+    {letter: 'B', title: 'Environments', to: '/docs/guides/environments', body: 'Run one disposable stack per story or epic, on its own worktree and ports.'},
+    {letter: 'A', title: 'Run tests', to: '/docs/guides/run-tests', body: 'One command per test case; output, video and trace filed; the status moves.'},
+    {letter: 'S', title: 'Code quality', to: '/docs/guides/code-quality', body: 'Scan a story’s worktree for vulnerabilities and code issues, and record the result.'},
+    {letter: 'B', title: 'Implement', to: '/docs/guides/implement', body: 'Hand a ticket to a coding agent as a prepared prompt.'},
+    {letter: 'T', title: 'MCP server', to: '/docs/guides/mcp-server', body: 'Let agents outside the editor read and change the tracker.'},
+  ]}
+/>
+
+## Principles
+
+A few rules hold across every feature. Knowing them makes the rest of the documentation
+predictable.
+
+<Cards
+  columns={2}
+  items={[
+    {mark: '01', title: 'Everything is a file you own', body: 'Tickets, agent roles, skills, prompt templates and settings are files in the repository, meant to be committed and reviewed.'},
+    {mark: '02', title: 'Reading is forgiving, writing is strict', body: 'A hand-edited or half-broken file still loads, with a warning. A write re-reads from disk first and refuses to overwrite a change it did not see.'},
+    {mark: '03', title: 'Nothing secret is in the repository', body: 'API keys and tokens live in VS Code’s secret storage. No settings field accepts a credential.'},
+    {mark: '04', title: 'The AI never writes behind your back', body: 'An answer lands in the editor’s draft and you press Save. Where the AI creates tickets, you approve the list first.'},
+    {mark: '05', title: 'Long work is stopped by silence, never by age', body: 'An AI run, a test or a scan that keeps producing output is never cut off. One that goes quiet past its idle timeout is.'},
+  ]}
+/>
+
+## Where to go next
+
+<Cards
+  items={[
+    {mark: 'NEW HERE', title: 'Install BFAST', to: '/docs/getting-started/installation', body: 'Install the extension, then follow the quick start to your first ticket.'},
+    {mark: 'VOCABULARY', title: 'Core concepts', to: '/docs/getting-started/concepts', body: 'Tickets, ids, the board, agents and skills — the words the rest of the docs use.'},
+    {mark: 'LOOKING SOMETHING UP', title: 'Settings reference', to: '/docs/reference/settings', body: 'Every field of .vscode/bfast.json, what it does and its default.'},
+  ]}
+/>

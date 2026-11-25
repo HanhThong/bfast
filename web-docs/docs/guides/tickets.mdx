@@ -1,0 +1,332 @@
+---
+title: Tickets
+---
+
+# Tickets
+
+The **Tickets** section is the tracker's navigation. It is a native VS Code tree: epics at the
+top, each level loaded when you expand it.
+
+![The Tickets tree of the Acme Shop demo, fully expanded](/img/screens/tickets-tree-expanded.png)
+
+Each row reads `<key> - <title>`. The key is the ticket's own segment of its id — `ST-2` for
+`ST-1.2` — because the indentation already shows the ancestors. The icon shows the type, and its
+colour the status.
+
+:::tip[Give the tree room]
+The side bar is narrow by default and long titles are cut off. Drag the side bar's right edge
+to widen it, and collapse **Environments** and **Code Quality** by clicking their headers when
+you do not need them.
+:::
+
+## The title bar
+
+Hover the **Tickets** header to see its buttons.
+
+| Button | Does |
+|---|---|
+| **+** New Epic | Creates a top-level epic |
+| Funnel — **Filter Tickets** | Opens a filter box; the tree narrows as you type |
+| **Clear Ticket Filter** | Shown only while a filter is active |
+| Eye — **Hide Test Cases** / **Show Test Cases** | Hides test case rows from the tree, or brings them back — see [below](#hide-test-cases) |
+| Circular arrow — **Refresh Tickets** | Re-reads the settings file and the tracker |
+| **Open Board** | Returns to the board you last used, or opens the selected ticket |
+| Gear — **Open Settings** | Opens the settings form |
+| **…** → **Shorten Long Ticket Folder Names** | Renames over-long ticket folders — see [below](#shorten-long-folder-names) |
+
+## Create tickets
+
+### Create an epic
+
+1. Click **+** in the Tickets title bar (or run **BFAST: New Epic** from the command palette).
+2. Type the title and press **Enter**.
+
+The epic gets the next free number (`EP-4` after `EP-3`) and its board opens.
+
+### Create a child ticket
+
+1. Right-click the parent in the tree.
+2. Choose the entry for the child you want. The menu offers only what the hierarchy allows:
+
+   | Right-click on | You can create |
+   |---|---|
+   | An epic | **New Sub-epic**, **New Story**, **New Test Case** |
+   | A story | **New Acceptance Criterion**, **New Test Case** |
+   | An acceptance criterion | **New Test Case** |
+   | A test case | nothing — it is a leaf |
+
+3. Type the title and press **Enter**.
+
+![The right-click menu of a story](/img/screens/tickets-menu-story.png)
+
+The ticket gets the next free id under its parent, appears in the tree, and its board opens.
+
+### An acceptance criterion comes with its first test case
+
+**New Acceptance Criterion** asks two questions, because a criterion should always have a test:
+
+1. The title of the criterion, for example `Reset link expires after one hour`:
+
+   ![Input box: title of the new acceptance criterion](/img/screens/tickets-new-ac.png)
+
+2. The title of its first test case, for example `Expired link shows a clear message`:
+
+   ![Input box: an acceptance criterion needs at least one test case — title of its first test case](/img/screens/tickets-new-ac-testcase.png)
+
+Both tickets are created, and the criterion's board opens:
+
+![The new criterion AC-1.3.1 under ST-3, with its board open](/img/screens/tickets-new-ac-board.png)
+
+Press **Escape** at the second question to create nothing.
+
+### Let the AI write the children
+
+To have the AI propose and write the children instead, use **Generate Stories…** (on an epic),
+**Generate Acceptance Criteria…** (on a story) or **Generate Test Cases…** (on a criterion) —
+see [Break a ticket down](./generate.mdx).
+
+## Open a ticket
+
+| Gesture | Result |
+|---|---|
+| Single click | Opens the board as a **preview tab** (italic title), reused by the next click |
+| Double click | Opens the board **pinned** |
+
+This is VS Code's own behaviour for files, so the `workbench.editor.enablePreview` setting
+applies. Starting to edit, saving, running the AI or running tests in a preview board pins it.
+
+![A pinned board (EP-1, upright title) beside a preview board (ST-1.2, italic title)](/img/screens/board-preview-vs-pinned.png)
+
+The tree follows the board: when you switch to a ticket's tab, the tree selects that ticket.
+
+## Hide test cases
+
+Test cases are usually most of a tracker. To read the plan — epics, stories, criteria —
+without them, click the eye in the Tickets title bar (**Hide Test Cases**). Click it again
+(**Show Test Cases**) to bring them back.
+
+While they are hidden:
+
+- the Tickets header says **Test cases hidden**;
+- an acceptance criterion has no expander, since only test cases sit under one;
+- a filter does not bring them back;
+- opening a test case's board selects nothing in the tree.
+
+Nothing else changes. Boards, **Run Tests** and the MCP server still see every test case.
+The choice is yours alone: it is remembered for this workspace on your machine, and is not
+written to `bfast.json`.
+
+## Filter
+
+1. Hover the Tickets header and click the funnel (**Filter Tickets**).
+2. Type part of an id or a title, for example `password`. The tree narrows on every keystroke,
+   and its first line says how many tickets match.
+3. Press **Enter** to close the box and keep the filter.
+
+![Filtering on "password": six tickets shown, with their ancestors](/img/screens/tickets-filter.png)
+
+A match keeps its **whole related tree** — every ancestor up to its epic and everything below
+it — so you see a match in context. Unrelated siblings drop out, and matches are shown expanded.
+
+To return to the full tree, click **Clear Ticket Filter** (the button that appears beside the
+funnel while a filter is active), or run **BFAST: Clear Ticket Filter**. The ticket you had selected
+stays selected.
+
+## Change a ticket
+
+Everything here is on the ticket's right-click menu.
+
+![The right-click menu of an epic](/img/screens/tickets-menu-epic.png)
+
+### Set the status
+
+1. Right-click the ticket → **Set Status…**.
+2. Pick **To do**, **In progress**, **In review**, **Done** or **Blocked**. The current one is
+   marked *current*; picking it does nothing.
+
+![The Set status pick, with To do marked current](/img/screens/tickets-set-status.png)
+
+The change is written to the ticket's history, and the icon colour changes.
+
+### Rename
+
+1. Right-click the ticket → **Rename…**. The input box opens with the current title selected.
+2. Type the new title and press **Enter**.
+
+![The rename box for ST-3](/img/screens/tickets-rename.png)
+
+The folder's slug is updated to match, but the id stays the same, so no child folder has to
+move. Renaming to the same title writes nothing.
+
+### Change Type to Story / Change Type to Epic
+
+A sub-epic can become a story, and a story can become an epic. The ordinal stays: `EP-1.2`
+becomes `ST-1.2`. The entry is on the menu of every epic and story, and BFAST refuses with a
+message when:
+
+- the ticket is a top-level epic (a story needs a parent),
+- the ticket still holds children its new type cannot hold — a story with acceptance criteria
+  cannot become an epic until they are moved or deleted,
+- the ticket has an [environment](./environments.mdx).
+
+### Reveal in File Explorer
+
+Opens the ticket's folder in your operating system's file manager.
+
+### Delete
+
+1. Right-click the ticket → **Delete…**.
+2. Read the confirmation — everything inside the ticket goes too — and click **Delete**.
+
+![Confirmation dialog: Delete TC-3 — Smoke: sign in and out?](/img/screens/tickets-delete-confirm.png)
+
+The folder moves to your system's trash, or is deleted for good where there is none (a remote
+workspace). Beyond the trash, git is your undo.
+
+## Link tickets
+
+Any two tickets can be linked, whatever their types and wherever they sit in the tree. A link
+records how two pieces of work relate, and it has a relation, read from the ticket you start on:
+
+| Relation | The other ticket shows |
+|---|---|
+| **blocks** | is blocked by |
+| **is blocked by** | blocks |
+| **relates to** | relates to |
+| **duplicates** | is duplicated by |
+| **is duplicated by** | duplicates |
+| **clones** | is cloned by |
+| **is cloned by** | clones |
+
+You link once, from either side: the other ticket records the inverse by itself. *ST-1.1 blocks
+ST-1.2* and *ST-1.2 is blocked by ST-1.1* are the same link.
+
+### Add a link
+
+From the sidebar:
+
+1. Right-click a ticket → **Link to Ticket…**.
+2. Pick the relation.
+3. Pick the other ticket.
+
+Or from the board: the **Description** tab ends in a **Linked tickets** section. Click **Link
+ticket** there, then pick the relation and the ticket the same way.
+
+A ticket cannot link to itself, and the other ticket must exist. Adding a link that is already
+there does nothing.
+
+### See and remove links
+
+The **Linked tickets** section lists a ticket's links grouped by relation.
+
+- Click a row to open that ticket's board.
+- Click **×** to remove the link. It is removed from **both** tickets.
+
+A link whose ticket no longer exists — deleted by hand, or lost in a merge — shows as **Not in
+the tracker**. Remove it with **×**.
+
+### What a link changes
+
+- Each ticket gets one `linked` (or `unlinked`) entry in its history.
+- A link does **not** count as an edit: it leaves `updatedAt` alone, so a board open mid-edit on
+  either ticket can still save.
+- **Deleting** a ticket removes its links from the tickets that remain, each with an `unlinked`
+  entry saying the ticket was deleted.
+- **Changing a ticket's type** (Epic ↔ Story) updates the links on the other tickets to the new
+  id.
+
+Links are stored in each ticket's `metadata.yaml` — see the
+[on-disk format](../reference/on-disk-format.mdx#links). Agents can link tickets too, with
+`link_tickets` and `unlink_tickets` on the [MCP server](./mcp-server.mdx).
+
+## Commit tickets
+
+Tickets are files in your git repository, so a change to one is a change git has to be told
+about. BFAST shows which tickets have something to commit, and commits one ticket at a time.
+
+### See what is not committed yet
+
+The sidebar marks tickets with uncommitted changes the way the Explorer marks files — in git's
+colours from your theme, with a letter on the right:
+
+| Mark | Meaning |
+|---|---|
+| **M** | The ticket's own files changed: its description, metadata, history, a design document or an image — or its folder was renamed. |
+| **U** | The ticket is new and has never been committed. |
+| **•** | The ticket itself is unchanged, but a ticket somewhere below it changed. You can find a change with the tree collapsed. |
+
+An open board shows the same mark on its tab. Hover a mark to read what it means.
+
+The marks follow your work: they update after BFAST writes a ticket, after a commit, and when you
+commit, stage or check out from **Source Control** or a terminal. With no git, or a tracker outside
+any repository, no marks are shown.
+
+### Commit a ticket
+
+1. Right-click the ticket → **Commit Ticket…**.
+2. If tickets under it changed too, pick **`<id>` only** or **`<id>` and the tickets under it**
+   (for example **ST-1.2 only**). Each option says how many files it commits.
+3. Check the message and press Enter.
+
+Only the ticket's files are committed. Anything else you have staged stays staged and stays out
+of the commit. A renamed ticket is committed as a rename, so nobody who pulls it gets a second
+copy of the old folder. BFAST never pushes.
+
+The message starts from **Commit message** on the settings form's **General** tab — by default
+`{{id}}: {{title}}`, for example `ST-1.2: Sign in with email`. Placeholders: `{{id}}`, `{{key}}`,
+`{{title}}`, `{{type}}`, `{{status}}`.
+
+A commit writes nothing into the ticket: no history entry and no status change.
+
+## Actions that start work
+
+| Menu entry | On | Guide |
+|---|---|---|
+| **Create Environment** | epic, story | [Environments](./environments.mdx) |
+| **Run Tests** | any ticket | [Run tests](./run-tests.mdx) |
+| **Implement…** | any ticket | [Implement](./implement.mdx) |
+| **Commit Ticket…** | any ticket | [Commit tickets](#commit-tickets) |
+
+The full menu of each type, from top to bottom:
+
+| Type | Menu |
+|---|---|
+| Epic | New Sub-epic, New Story, New Test Case, Generate Stories… · Set Status…, Rename…, Change Type to Story, Link to Ticket… · Reveal in File Explorer · Create Environment · Run Tests · Implement…, Commit Ticket… · Delete… |
+| Story | New Acceptance Criterion, New Test Case, Generate Acceptance Criteria… · Set Status…, Rename…, Change Type to Epic, Link to Ticket… · Reveal in File Explorer · Create Environment · Run Tests · Implement…, Commit Ticket… · Delete… |
+| Acceptance criterion | New Test Case, Generate Test Cases… · Set Status…, Rename…, Link to Ticket… · Reveal in File Explorer · Run Tests · Implement…, Commit Ticket… · Delete… |
+| Test case | Set Status…, Rename…, Link to Ticket…, Set Service… · Reveal in File Explorer · Run Tests · Implement…, Commit Ticket… · Delete… |
+
+## Warnings in the tree
+
+BFAST never hides a ticket because its files are damaged. It shows the ticket with a warning
+beside its title — like *No test case yet* on `AC-2` in the tree at the top of this page.
+
+| Warning | Cause | Fix |
+|---|---|---|
+| No test case yet | An acceptance criterion has no test case | Add or generate one. This never blocks anything. |
+| Id drift | The id in the folder name or `metadata.yaml` disagrees with where the folder sits | Nothing — the nesting wins, and the next write heals the file |
+| Missing metadata or description | A file was deleted or is unreadable | Restore it from git, or edit the ticket to rewrite it |
+
+If two folders resolve to the same id — after a bad merge, for example — both stay visible.
+The second is shown with a rank, such as `EP-1#2`, until you rename or remove one.
+
+## Shorten long folder names
+
+A ticket folder is named `<id>-<Slug>` and capped at **40 characters**, so the deepest path
+stays under Windows' 260-character limit even inside an environment's worktree. Trackers
+created by an older version may have longer names.
+
+1. Hover the Tickets header and click **…**.
+2. Choose **Shorten Long Ticket Folder Names**.
+
+![The Tickets "…" menu with Shorten Long Ticket Folder Names](/img/screens/tickets-more-menu.png)
+
+Every over-long folder is renamed in one go. It never overwrites an existing folder, and it does
+not touch a ticket's history or timestamps: a folder's name is not a change to the ticket.
+
+## Things BFAST does not do
+
+- **Move a ticket to another parent.** Every folder carries its full id, so a move would rename
+  the whole subtree. Create the ticket in the new place and delete the old one.
+- **Assign from the tree.** `assignee` is a field in `metadata.yaml` that you can edit by hand;
+  the board shows it.

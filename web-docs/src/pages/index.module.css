@@ -1,0 +1,92 @@
+/* The home page frame: hero and section bands. The blocks inside them — the five letters, the
+   workflow — live in src/components/Landing, shared with the "What is BFAST?" doc. */
+
+.hero,
+.section {
+  --surface-alt: #f3f6fc;
+  --line: #dbe3f3;
+  --muted: #4b5875;
+}
+
+:global([data-theme='dark']) .hero,
+:global([data-theme='dark']) .section {
+  --surface-alt: #161a24;
+  --line: #2c3346;
+  --muted: #a7b0c4;
+}
+
+.hero {
+  padding: 5rem 0 4rem;
+  text-align: center;
+  background: var(--surface-alt);
+  border-bottom: 1px solid var(--line);
+}
+
+.heroInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.heroLogo {
+  width: 96px;
+  height: 96px;
+  margin-bottom: 1rem;
+}
+
+.heroTitle {
+  font-size: 3.5rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.04em;
+}
+
+.heroAcronym {
+  margin-bottom: 1rem;
+}
+
+.heroTagline {
+  max-width: 640px;
+  font-size: 1.1rem;
+  color: var(--muted);
+  margin-bottom: 2rem;
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.section {
+  padding: 4rem 0 2rem;
+}
+
+.sectionAlt {
+  background: var(--surface-alt);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.sectionTitle {
+  text-align: center;
+  font-size: 2rem;
+}
+
+.sectionLead {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 2.5rem;
+  color: var(--muted);
+}
+
+@media screen and (max-width: 996px) {
+  .hero {
+    padding: 3rem 1rem;
+  }
+
+  .heroTitle {
+    font-size: 2.5rem;
+  }
+}

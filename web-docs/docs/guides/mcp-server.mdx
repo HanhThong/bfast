@@ -1,0 +1,288 @@
+---
+title: MCP server
+---
+
+# MCP server
+
+BFAST can serve the tracker over the
+[Model Context Protocol](https://modelcontextprotocol.io/), so a coding agent — Claude Code,
+VS Code's agent mode, Codex — can read tickets, create and update them, and start BFAST's own
+actions without you copying text between windows.
+
+It is **off by default**. Nothing listens until you switch it on.
+
+## Step 1 — Switch it on
+
+1. Open **BFAST: Open Settings** (or the gear in the Tickets title bar).
+2. Select the **MCP server** tab. Its **Status** says *Not running*, and **Connect a tool**
+   has nothing to offer yet.
+
+   ![The MCP server tab with the server switched off: Status says Not running](/img/screens/mcp-settings-off.png)
+
+3. Tick **Run the MCP server**. Three more fields appear:
+   - **Port** — `7711` unless you change it.
+   - **Who may reach it** — *This machine only (127.0.0.1)*. Leave it unless you have a
+     reason; see [Reach](#reach).
+   - **Functions it offers** — one checkbox per function. Only **Read tickets and their
+     descriptions** is ticked.
+4. Tick every function you want a client to use. For an agent that should also move tickets
+   along, tick **Create, rename and link tickets** and **Change a ticket's status**.
+5. Click **Save**.
+
+The tab stays open and shows the result under **Status**: *Running — serving read, write,
+status.* and the address, by default `http://127.0.0.1:7711/mcp`, with a **Copy** button.
+
+![The MCP server tab after saving: port 7711, This machine only, three functions ticked, and Status Running at http://127.0.0.1:7711/mcp](/img/screens/mcp-settings-on.png)
+
+**Saving is the only control.** Save with the server on and it starts or restarts; save with
+it off and it stops. Closing the window stops it.
+
+## Step 2 — Connect a tool
+
+Under the status, **Connect a tool** builds the connection for the tool you use.
+
+1. Pick the tool in the list — **Claude Code**, **VS Code** or **Codex**. The snippet below
+   the list changes with it.
+2. Either click **Copy** and paste the snippet where the tool expects it, or click **Save for
+   the team** to write it into the tool's project file.
+
+![Status Running and Connect a tool with Claude Code selected, showing the claude mcp add command](/img/screens/mcp-status-running.png)
+
+| Tool | **Copy** gives | **Save for the team** writes |
+|---|---|---|
+| Claude Code | `claude mcp add --transport http bfast <address>` | `.mcp.json` |
+| VS Code | a `servers` block | `.vscode/mcp.json` |
+| Codex | a block for `~/.codex/config.toml` | — (that file is personal, so the button is hidden) |
+
+![Connect a tool with VS Code selected, showing the servers block for .vscode/mcp.json](/img/screens/mcp-connect-vscode.png)
+
+![Connect a tool with Codex selected, showing the mcp_servers.bfast block for ~/.codex/config.toml](/img/screens/mcp-connect-codex.png)
+
+**Save for the team** merges the `bfast` entry into the file and leaves everything else in it
+alone. A notification confirms the write:
+
+![After Save for the team, a notification says the BFAST server was saved into .mcp.json](/img/screens/mcp-save-for-team.png)
+
+Commit that file and a teammate who opens the project finds BFAST already offered. For Claude
+Code it looks like this:
+
+```json title=".mcp.json"
+{
+  "mcpServers": {
+    "bfast": {
+      "type": "http",
+      "url": "http://127.0.0.1:7711/mcp"
+    }
+  }
+}
+```
+
+and for VS Code:
+
+```json title=".vscode/mcp.json"
+{
+  "servers": {
+    "bfast": { "type": "http", "url": "http://127.0.0.1:7711/mcp" }
+  }
+}
+```
+
+Any other MCP client that speaks **Streamable HTTP** can connect to the address directly.
+There is no stdio transport.
+
+:::note
+A saved file keeps the address of the moment it was saved. If you later change the port,
+save the tool's file again.
+:::
+
+## Step 3 — Use it from an agent
+
+Keep the VS Code window open — the server lives in it — and ask your agent about the tickets.
+
+Open a terminal in the workspace and start Claude Code. When it starts in a folder with a
+`.mcp.json`, it asks once whether to use the project's servers; approve **bfast**. Then ask in
+plain words, for example *"List the tickets under EP-1 with their status."*
+
+For a one-off, non-interactive run you can name the file and the allowed tools explicitly:
+
+```bash
+claude -p "Using the bfast MCP server, list the tickets under EP-1 with their status." \
+  --mcp-config .mcp.json \
+  --allowedTools "mcp__bfast__list_tickets mcp__bfast__get_ticket"
+```
+
+The agent calls `list_tickets` and `get_ticket` and answers from the live tracker:
+
+![Claude Code in the terminal answering with a table of every ticket under EP-1 and its status](/img/screens/mcp-claude-read.png)
+
+A write works the same way, provided its function is switched on — here **Change a ticket's
+status**:
+
+```bash
+claude -p "Using the bfast MCP server, move ST-1.3 to in-progress." \
+  --mcp-config .mcp.json \
+  --allowedTools "mcp__bfast__set_ticket_status"
+```
+
+![Claude Code confirming that ST-1.3 is now in-progress](/img/screens/mcp-claude-write.png)
+
+The sidebar repaints, and the ticket's **History** tab records the change under your
+`userName`, with the comment *Set over the BFAST MCP server.*:
+
+![The board of ST-1.3: status In progress, and a history entry todo → in-progress with the comment Set over the BFAST MCP server](/img/screens/mcp-history-entry.png)
+
+With the **settings** function on, an agent can also set up testing — for example
+*"Add a service 'orders' in services/orders that needs the orders and postgres compose
+services, and assign TC-1.2.1.1 to it."* See [Changing settings over MCP](#changing-settings-over-mcp).
+
+## Functions and tools
+
+A client sees only the tools of the functions you switched on.
+
+| Function | Checkbox in the form | Tools | Lets a client |
+|---|---|---|---|
+| `read` | Read tickets and their descriptions | `list_tickets`, `get_ticket` | Read the tree, and a ticket's description, history, metadata and links |
+| `write` | Create, rename and link tickets | `create_ticket`, `rename_ticket`, `link_tickets`, `unlink_tickets` | Create a ticket under a parent; rename one; link two tickets (blocks, relates to, duplicates, clones and their inverses) or remove a link |
+| `designs` | Read and edit technical design documents | `list_designs`, `get_design`, `create_design`, `update_design` | Read, add and rewrite design documents on an epic or story |
+| `status` | Change a ticket's status | `set_ticket_status` | Move a ticket between `todo`, `in-progress`, `in-review`, `done`, `blocked` |
+| `tests` | Run tests | `run_tests`, `set_test_case_service` | Start a Run Tests batch for a ticket's subtree; assign a test case to a [service](./run-tests.mdx#services), or clear it |
+| `scan` | Run a code scan | `run_scan` | Start a scan of a ticket's environment, or of the workspace |
+| `environments` | Start and stop environments | `list_environments`, `start_environment`, `stop_environment` | List dev environments; start or stop one |
+| `settings` | Read and change test and environment settings | `get_settings`, `list_compose_services`, `update_environment_settings`, `update_test_settings`, `set_test_service`, `remove_test_service` | Read and change the environments and tests settings: compose files, port variables, the project test command, and the services |
+
+Things a client **cannot** do, by design:
+
+- delete a ticket,
+- delete or rename a design document,
+- create or delete an environment,
+- change settings while the server is open to the network.
+
+## How writes behave
+
+- Every write is recorded in the ticket's history under the workspace's `userName`, with a
+  comment saying it was made over the BFAST MCP server.
+- The sidebar and open boards repaint after each write.
+- **Asking for the current value writes nothing.** Renaming a ticket to the title it already
+  has, moving it to the status it is already in, or sending the same design body adds no
+  history entry — so an agent that retries cannot bury the real history. The same goes for
+  linking two tickets that are already linked, or unlinking a link that is not there.
+- `link_tickets` takes `id`, `relation` and `targetId` — *ST-1.1 blocks ST-1.2* — and the other
+  ticket records the inverse (*is blocked by*) by itself, so link once, from either side. Each
+  ticket gets its own `linked` history entry. `unlink_tickets` takes the link as `get_ticket`
+  shows it and removes both sides.
+- `update_design` replaces the whole document. Pass the `baseUpdatedAt` that `get_design`
+  returned to have the write refused if the document changed in between.
+
+## Changing settings over MCP
+
+With the `settings` function on, an agent can set up testing for you: declare the services, pick
+the compose services each one needs, and assign test cases to them.
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `get_settings` | none | The `environments` and `tests` blocks, the compose files in use, whether Run Tests is configured, and whether this connection may change anything (`writable`) |
+| `list_compose_services` | none | The service names your compose files declare, for a service's e2e `compose` list |
+| `update_environment_settings` | `changes` | Set fields of `environments`, e.g. `{ "composeOverrides": ["docker-compose.e2e.yml"] }`. `null` clears a field |
+| `update_test_settings` | `changes` | Set fields of `tests`, e.g. `{ "command": "npx playwright test --grep {{id}}" }`. `services` replaces the whole list |
+| `set_test_service` | `service` | Add a service, or replace the one with the same id |
+| `remove_test_service` | `id` | Remove a service |
+| `set_test_case_service` (`tests` function) | `id`, `service` | Assign a test case to a service; omit `service` to clear it |
+
+A service sent to `set_test_service` looks like this:
+
+```json
+{
+  "id": "orders",
+  "name": "Orders",
+  "folder": "services/orders",
+  "unit": { "command": "npm test -- --coverage", "coverage": "coverage/lcov.info" },
+  "e2e": {
+    "testCommand": "npm run e2e -- --grep {{id}}",
+    "compose": ["orders", "postgres"]
+  }
+}
+```
+
+- **The same checks as the Settings form.** A change that the form would refuse is refused,
+  with the same message, and nothing is written. A value BFAST cannot use is never dropped
+  silently: the whole change is refused instead.
+- **You are told.** Every change shows a notification in the window, and `bfast.json` is in git.
+- **Refused while the server is open to the network.** A command written here runs on your
+  machine when tests or environments run. With reach `network`, anyone who can reach the port
+  could do that, so the server only reads settings then (`get_settings` answers
+  `writable: false`).
+- Assigning a test case writes `service:` into its `metadata.yaml` with a history entry. A
+  service that the settings do not declare is refused.
+
+## Long-running tools answer at once
+
+`run_tests`, `run_scan`, `start_environment` and `stop_environment` **start** the work and
+return immediately. They do not wait for it to finish.
+
+If the work is already running, the tool answers `started: false` with the reason rather than
+an error. A client that timed out and retried therefore never starts the same work twice.
+
+To see the result, read the ticket again: a test run moves a test case's status, and a scan
+adds a history entry.
+
+## Reach
+
+| Reach | In the form | Listens on | Who can connect |
+|---|---|---|---|
+| `local` (default) | This machine only (127.0.0.1) | `127.0.0.1` | Only this machine |
+| `network` | Any machine that can reach this one | `0.0.0.0` | Any machine that can reach this one |
+
+:::danger[There is no authentication]
+The server has no password, no token and no per-client permission. Anyone who can reach the
+port can do everything you switched on. BFAST asks for confirmation before switching to
+`network`. Do not use it on a network you do not trust.
+:::
+
+## Changing MCP settings disconnects clients
+
+A save that changes the **MCP server's own settings** restarts the server and drops every
+connected client. That is deliberate: a client must not go on believing a function is available
+after you switched it off. Clients reconnect on their next call and receive the new tool list.
+
+A save that changes anything else — including a change made by the `settings` tools — leaves the
+server and its clients running.
+
+A change to `bfast.json` that arrives another way — a `git pull`, a hand edit — is applied
+when you click **Refresh Tickets**.
+
+## Settings
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `mcp.enabled` | `false` | Whether the server listens |
+| `mcp.port` | `7711` | The TCP port |
+| `mcp.reach` | `local` | `local` or `network` |
+| `mcp.functions` | `["read"]` | Which functions are offered. An empty list is allowed. |
+
+```json title=".vscode/bfast.json"
+{
+  "mcp": {
+    "enabled": true,
+    "functions": ["read", "write", "status"]
+  }
+}
+```
+
+## Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| The tab says the port is taken | Another window with the same workspace, or another program, holds it. Change the port and save. |
+| A client gets `404` after you saved | The server restarted. The client should reconnect; restart the client if it does not. |
+| A tool is missing in the client | Its function is switched off. Tick it and save. |
+| A settings tool answers *cannot be changed over MCP while the server is open to the network* | Reach is `network`. Switch it to **This machine only**, or change the settings in the form. |
+| A settings tool answers *… Nothing was written.* | A value failed the same checks the Settings form runs (a folder outside the workspace, a bad service id, an out-of-range number…). Fix the value the message names and send it again. |
+| `set_test_case_service` answers *No service “…”* | The service is not declared in the tests settings. Add it with `set_test_service` first. |
+| The client cannot connect at all | Check the VS Code window is open and **Status** says *Running*. The client may not support the Streamable HTTP transport. |
+| A browser-based client gets `403` | Requests with a non-local `Origin` are refused. Use a non-browser client. |
+
+## In an environment's window
+
+Each [environment](./environments.mdx) worktree gets its own MCP port when it is created, and
+its MCP client files point at that port. An agent opened in the worktree's window talks to
+that window's tracker.

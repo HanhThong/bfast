@@ -1,0 +1,11 @@
+# Response headers for the Cloudflare Worker that serves the site (wrangler.jsonc), copied as-is to the
+# root of the build. Cloudflare already revalidates every page on each visit, so a new deployment shows
+# at once; these lengthen the cache where that is safe.
+
+# Docusaurus names every file here after its content: a name never changes what it holds.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Screenshots and the logo keep their names whatever they hold: a day, so a retaken screenshot shows within a day.
+/img/*
+  Cache-Control: public, max-age=86400

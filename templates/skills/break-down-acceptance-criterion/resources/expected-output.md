@@ -1,0 +1,3 @@
+- <what the criterion's Then requires, in the situation its Given sets up>
+- <only if the criterion states a second requirement: that one, as its own check>
+- <only if its Given names another situation: the same requirement, checked there>

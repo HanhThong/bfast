@@ -1,0 +1,181 @@
+---
+title: AI assistant
+---
+
+# AI assistant
+
+The AI assistant writes or rewrites a ticket's description, and draws
+[design documents](./design-documents.mdx). You choose **who** writes — an agent — and BFAST
+picks **how** from the ticket's type — a skill. Both are files you own; see
+[Agents and skills](./agents-and-skills.mdx).
+
+Nothing the assistant writes reaches disk until you press **Save**.
+
+## Set it up
+
+### Step 1 — Make sure a provider is available
+
+The assistant runs through one of two providers.
+
+| Provider | Setting | Needs |
+|---|---|---|
+| Claude Code CLI (default) | `claude-cli` | The `claude` CLI installed and signed in. No extra dependency. |
+| Claude Agent SDK | `claude-agent-sdk` | An API key or OAuth token |
+
+For the default provider, check in a terminal that the CLI works:
+
+```bash
+claude --version
+```
+
+If `claude` is installed somewhere VS Code cannot see, put its full path in **Settings → AI
+assistant → Claude executable** (`ai.executablePath`).
+
+For the Agent SDK, or to use a specific key with the CLI, store a credential from the command
+palette:
+
+- **BFAST: Set AI API key**
+- **BFAST: Set AI OAuth token**
+- **BFAST: Clear AI credentials**
+
+Credentials go to VS Code's secret storage, never into `bfast.json`. If none is stored, BFAST
+falls back to the `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` environment variable.
+
+### Step 2 — Choose the provider and the default model
+
+1. Click the gear in the **Tickets** title bar, or run **BFAST: Open Settings**.
+2. Open the **AI assistant** tab.
+3. Pick a **Provider**.
+4. Pick a **Default model** — the model every run uses unless a tab picks another one.
+   *Sonnet — balanced* is a good everyday choice.
+5. Click **Save**.
+
+![The AI assistant tab of the settings form, with the provider, the default model and the agents list](/img/screens/ai-settings.png)
+
+### Step 3 — Review the limits
+
+Scroll down the same tab, below the agents list, for the remaining fields.
+
+![Ticket language, maximum turns and idle timeout further down the AI assistant tab](/img/screens/ai-settings-limits.png)
+
+| Field | Setting | Default | Meaning |
+|---|---|---|---|
+| Ticket language | `ai.language` | — | The language descriptions are written in |
+| Maximum turns | `ai.maxTurns` | 12 | How many steps a run may take (1–50) |
+| Idle timeout | `ai.idleTimeout` | 180 | Seconds of **silence** before a run is stopped (30–1800). A run that keeps reporting progress is never stopped. |
+| Agents at once | `ai.concurrency` | 3 | Agents at once when [generating](./generate.mdx) (1–8). Shared by the whole window. |
+| Claude executable | `ai.executablePath` | — | Path to `claude`, when it is not on the `PATH` |
+
+Click **Save** when you are done.
+
+## Write a description from scratch
+
+This example writes a new, empty story.
+
+1. In the **Tickets** view, right-click an epic → **New Story**, type a title such as
+   `Send an order confirmation email` and press **Enter**. The story's board opens, showing
+   *No description yet.*
+
+   ![A new story's board with an empty description](/img/screens/ai-empty-story.png)
+
+2. Click **AI Assistant** at the right of the board's tab bar. The assistant panel opens above
+   the description.
+3. Check the **Agent**. Under the picker, the panel names the skill that will run — here
+   *Write story*. Pick another role to change the voice.
+4. Leave **Model** on *Default*, or pick another model for this tab only.
+5. Optionally type an instruction in the box — what to focus on, what to leave out.
+
+   ![The AI assistant panel with the agent, the resolved skill, the model and an instruction](/img/screens/ai-panel.png)
+
+6. Click **Generate**.
+
+The button turns into **Stop** and the activity log starts. It shows the model that
+started, the agent's thinking, and every file it reads, so you can see the run is alive.
+Click **Stop** to end it.
+
+![A run in progress: Stop button and the activity log naming each file read](/img/screens/ai-run-progress.png)
+
+7. When the run finishes, the board switches to **edit mode** with the answer in the editor.
+   Read it and change anything you like.
+
+   ![The generated description in the editor, waiting for Save](/img/screens/ai-draft.png)
+
+8. Click **Save** (or press `Ctrl+Enter`). Click **Cancel** to throw the answer away.
+
+## Rewrite an existing description
+
+When the ticket already has a description, the answer is not put straight into the editor.
+You review it as a diff first.
+
+1. Open the ticket's board and click **AI Assistant**.
+2. Type what should change — for example
+   `Add a Behaviour section and the edge cases for a declined card.` — and click **Generate**.
+3. When the run finishes, the panel shows **The assistant rewrote this description** with a
+   count of added and removed lines. **Changes** shows the diff, with changed words
+   highlighted; **New text** shows the answer on its own.
+
+   ![The diff review: removed lines in red, added lines in green, with Approve, Rewrite and Cancel](/img/screens/ai-diff-review.png)
+
+4. Choose one:
+   - **Approve** — the answer goes into the editor. Press **Save** to write it.
+   - **Rewrite** — ask again. The new answer is compared with the **original** text again, not
+     with the previous answer.
+   - **Cancel** — discard the answer.
+
+The **Edit** button is hidden while a review is open, so an answer cannot be lost by accident.
+
+## See what was recorded
+
+Open the ticket's **History** tab after saving. The change is recorded under **your** name,
+with a comment naming the agent, the skill, the provider, the model, the number of turns and
+the cost, plus the instruction you typed. **See before and after** expands the old and new text.
+
+![The History tab: a description change with its provenance comment](/img/screens/ai-history.png)
+
+Because the history is in git, AI spend is auditable.
+
+## What the agent may do
+
+A run is sandboxed. The limits are fixed in code and are not settings.
+
+- It can **read** your workspace: `Read`, `Glob` and `Grep` only. No shell, no network tools.
+- It **cannot write** the ticket it is working on. Its answer is the draft you review.
+- On a board, it **may edit the description file of other existing tickets** when your
+  instruction asks for it — "also update the acceptance criteria to match". It cannot create
+  files or touch anything outside ticket descriptions.
+- Your personal Claude Code configuration — `CLAUDE.md`, settings and hooks — is **not**
+  loaded.
+
+When a run edits another ticket, BFAST records it in that ticket's history as a description
+change, with a comment naming the agent and the ticket it was working on. The result message
+lists which tickets were edited.
+
+## Model
+
+| Level | Where | Applies to |
+|---|---|---|
+| Workspace default | **Settings → AI assistant → Default model** (`ai.model`) | every run |
+| Per tab | The **Model** picker on the AI panel or a generate tab | this tab's runs only; remembered across reloads, never written to disk |
+
+The picker offers aliases — *Best available*, *Opus*, *Sonnet*, *Haiku*, *Fable*,
+*Opus plans, Sonnet writes*, and 1M-context variants — then pinned model ids, then
+**Custom…**, which accepts any id, for a model newer than the bundled list. An alias follows
+whatever Claude Code currently points it at; a pinned id stays put.
+
+**Default — …** names the workspace setting. Leave the setting empty to use Claude Code's own
+default. A mistyped model name is reported as that run's error.
+
+## Language
+
+Set **Settings → AI assistant → Ticket language** (`ai.language`) to have descriptions written
+in a language other than the agent's default. Prose is translated. Code, identifiers, file
+paths, ticket ids and the structural keywords of a skill — **As a / I want / So that**,
+**Given / When / Then** — stay in English, so every ticket keeps the same shape. Descriptions
+already written are never translated.
+
+## Continue a conversation
+
+On a **design** tab, after a first run, the panel shows **Continue the previous conversation**,
+ticked, so a second request refines the diagram instead of starting over. See
+[Design documents](./design-documents.mdx#refine-a-document). The description tab has no such
+option: its whole text is sent with every run.

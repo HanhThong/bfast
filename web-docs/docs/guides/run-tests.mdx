@@ -1,0 +1,372 @@
+---
+title: Run tests
+---
+
+# Run tests
+
+**Run Tests** runs your test command once for every test case under a ticket. Each run is
+filed with its output and evidence — a screenshot, a video, a Playwright trace — and the
+verdict moves the test case's status.
+
+BFAST does not know your test framework. You give it one shell line with a placeholder for the
+test case id.
+
+![The Tests tab of a story after a run: two test cases passed, one failed, with the log above](/img/screens/tests-tab.png)
+
+## Step by step: your first run
+
+The walkthrough uses a story, **ST-1.2 Sign in with email**, with two acceptance criteria and
+three test cases, and a test script that takes a test case id: `node tests/run.mjs TC-1.2.1.1`.
+Your real command will be Playwright, Cypress, pytest, Maven… — anything that can select one
+test by name.
+
+### 1. Put the test case id in each test's name
+
+The command selects a test by its id, so **the test's name must contain the id**:
+
+```ts
+test('TC-1.2.1.1 wrong password shows a generic error', async ({ page }) => {
+  // …
+});
+```
+
+### 2. Set the command
+
+1. Open the BFAST settings (gear in the **Tickets** title bar) → **Tests**.
+2. In **Test command**, type the line, with `{{id}}` where the id goes:
+   `node tests/run.mjs {{id}}` — for Playwright, `npx playwright test --grep '{{id}} '`.
+3. Optional: in **Evidence files**, type a glob for what your tool leaves behind for one test
+   case, relative to the working directory: `test-results/{{id}}.*`.
+4. Leave **Working directory**, **Results folder**, **Tests at once** and **Idle timeout** at
+   their defaults for now.
+5. Click **Save**.
+
+![Settings → Tests with the test command and an evidence glob filled in](/img/screens/tests-settings.png)
+
+The result in `.vscode/bfast.json`:
+
+```json
+"tests": {
+  "command": "node tests/run.mjs {{id}}",
+  "evidence": "test-results/{{id}}.*"
+}
+```
+
+:::tip[The trailing space]
+With `--grep`, end the id with a space — `'{{id}} '` — so that a run for `TC-1.2.1.1` does not
+also match `TC-1.2.1.10`.
+:::
+
+### 3. Start the run
+
+Right-click the story in **Tickets** → **Run Tests**. Every test case beneath it runs, one
+after another. A notification counts them and has **Cancel**:
+
+![The notification "BFAST: running tests for ST-1.2…: 1/3" with a Cancel button](/img/screens/tests-running.png)
+
+You can start the same run from a board: open the ticket, select the **Tests** tab and click
+**Run tests**.
+
+### 4. Watch it on the board
+
+Open the story's board and select **Tests**. While the batch runs, the tab shows a red
+**Stop** button, a live count and the **Log**, every line prefixed with its test case's id.
+Each test case's row turns green or red as it finishes.
+
+![The Tests tab mid-run: Stop, "Running · 2 of 3 done · 1 passed", the log, and TC-3 still Running](/img/screens/tests-tab-running.png)
+
+### 5. Read the results
+
+When the batch ends, **Run tests** comes back and the summary line says how it went:
+`3 test cases · 2 passed · 1 failed · last run … · 1 criterion without a test case`.
+
+- The **left column** is the hierarchy under the ticket. Each criterion says how many of its
+  test cases pass, and a criterion with no test case is flagged **No test case yet**.
+- The **right column** is the selected test case's latest run: its status pill, the outcome,
+  the time, duration, exit code and who ran it, the exact command, the evidence, and the
+  output.
+
+Click the failed test case to see why it failed:
+
+![A failed run: Blocked, exit 1, the command, the screenshot evidence, and the output with the failing assertion](/img/screens/tests-failed-run.png)
+
+- The evidence image is shown inline, with **Open in editor**.
+- **Output** is open because the run failed; **Open full log** opens the whole `output.log`.
+- **Reveal folder** opens the run's folder.
+
+### 6. Check the statuses
+
+The verdict moved each test case's status: passed → `done` (green), failed → `blocked` (red).
+The tree shows it at once:
+
+![The ticket tree: TC-1 and TC-3 green, TC-2 red, AC-2 warning "No test case yet"](/img/screens/tests-tree-status.png)
+
+The status change is written to the test case's history with a comment naming the run.
+
+### 7. Read the full log
+
+Every command and its output also goes to the **BFAST Tests** output channel (**View →
+Output**, then pick **BFAST Tests**). An error message's **Show Log** opens it too.
+
+![The BFAST Tests output channel: each test case started, its output, passed/failed with exit code and evidence count](/img/screens/tests-output-channel.png)
+
+## Run
+
+Two places start a run:
+
+- right-click any ticket in the tree → **Run Tests**,
+- **Run tests** on a board's **Tests** tab.
+
+Either runs every test case in that ticket's subtree — one test case, a criterion's, all of a
+story's, or a whole epic's, including the test cases that sit directly under a story or an
+epic. Progress shows in a notification, in the **BFAST Tests** output
+channel and on every open board the batch reaches. **Stop** (or **Cancel** on the
+notification) cancels the batch, including browsers the test runner started.
+
+A test case belongs to at most one running batch. Starting a second batch that overlaps a
+running one is refused.
+
+### Placeholders
+
+| Token | Value |
+|---|---|
+| `{{id}}` | The full ticket id, `TC-1.2.1.1`. Unique — the recommended token. |
+| `{{key}}` | The last segment, `TC-1`. **Not unique** across the tracker. |
+| `{{folder}}` | The absolute path of the test case's folder. Quote it: `"{{folder}}"`. |
+
+There is no `{{title}}`: free text in a shell line is an injection risk. An unknown token is
+left in the line untouched.
+
+The command runs through `/bin/sh -c`, or `cmd.exe` on Windows, so pipes, `&&` and `npm`/`npx`
+work.
+
+## Outcomes
+
+| Outcome | When | Filed | Status becomes |
+|---|---|---|---|
+| `passed` | the command exits 0 | yes | `done` |
+| `failed` | the command exits non-zero | yes | `blocked` |
+| `timeout` | no output for longer than the idle timeout | yes | `blocked` |
+| `cancelled` | you stopped it while it ran | no | unchanged |
+| `skipped` | still queued when the batch was stopped | no | unchanged |
+| `error` | the test case could not be run at all | no | unchanged |
+
+A status change is written to the ticket's history with a comment naming the run. **A re-run
+with the same verdict changes nothing in the ticket**: a second green run on a `done` test case
+is filed and shown on the Tests tab, but adds no history entry.
+
+Statuses written before a Stop stay written.
+
+## Where runs are filed
+
+Outside the tracker, under `tests.resultsFolder` — by default `.bfast/test-results`:
+
+```text
+.bfast/test-results/
+  TC-1.2.1.2/
+    2026-11-19T13-36-38.112Z/
+      run.json          verdict, command, duration, files
+      output.log        the command's output
+      TC-1.2.1.2.png    evidence
+```
+
+Commit the folder or gitignore it, as your team prefers. If it is committed, a teammate's runs
+appear on your boards after a pull.
+
+## Evidence: videos, screenshots and traces
+
+Set `tests.evidence` to a glob for the files your test tool leaves behind for one test case:
+
+```json
+"tests": {
+  "command": "npx playwright test --grep '{{id}} '",
+  "evidence": "e2e/evidence/**/{{id}}.*"
+}
+```
+
+After each test case, every match **written during that run** is copied into the run's
+folder. A file left over from an earlier run is ignored.
+
+- `**` spans folders; `*` and `?` match within a name; every other character is literal.
+- The pattern is relative to `tests.cwd` and may use `{{id}}` and `{{key}}`.
+- If your test tool clears its output folder when a run starts, keep `tests.concurrency` at 1.
+
+## The Tests tab
+
+Every board has a **Tests** tab; its label counts the test cases beneath the ticket.
+
+**On a test case**, the left column is its run history, newest first. The right column is the
+selected run: the command, then the evidence.
+
+**On a criterion, story or epic**, the left column is the hierarchy beneath it. Every test
+case shows its latest verdict or **Not run yet**, and every parent says how many of its test
+cases pass. The right column is the selected test case's latest run.
+
+Evidence is shown in place:
+
+| File | Shown as |
+|---|---|
+| Video | A player, inline — converted to VP8 with `ffmpeg` first when the editor cannot decode it ([troubleshooting](../reference/troubleshooting.mdx#the-video-does-not-play)) |
+| Image | Inline, with **Open in editor** |
+| `output.log` | A collapsible **Output** block, open when the run failed, with **Open full log** |
+| Playwright trace (`.zip`) | A row with **Show**, **Open in Playwright Trace Viewer** and **Reveal** |
+| Anything else | A row with **Open** and **Reveal** |
+
+### The inline trace viewer
+
+**Show** opens BFAST's own viewer for a Playwright trace:
+
+- a **filmstrip** of screenshots across the top,
+- the **actions** down the left, nested by step, failed ones in red,
+- the selected action's **detail** on the right: the screenshot before and after, the error
+  and stack, console messages, network requests and the source location. Clicking the source
+  location opens the file at that line.
+
+For DOM snapshots and the locator picker, use **Open in Playwright Trace Viewer**. It finds
+the Playwright installed in your workspace and needs no configuration. In a remote window it
+serves the viewer on the remote and opens it in your browser.
+
+To open evidence with a command of your own, set `tests.evidenceCommand` (**Open evidence
+with** on the Tests tab of the settings). `{{file}}` is the file's path, already quoted — do
+not add quotes:
+
+```json
+"evidenceCommand": "pnpm --dir e2e exec playwright show-trace {{file}}"
+```
+
+## Settings
+
+| Setting | Form field | Default | Meaning |
+|---|---|---|---|
+| `tests.command` | Test command | — | The shell line, run once per test case |
+| `tests.cwd` | Working directory | workspace root | Working directory, relative to the workspace |
+| `tests.resultsFolder` | Results folder | `.bfast/test-results` | Where runs are filed. Must be outside the tracker. |
+| `tests.evidence` | Evidence files | — | Glob for files to keep with each run |
+| `tests.evidenceCommand` | Open evidence with | — | Command for opening evidence the board cannot show |
+| `tests.traceFrames` | Trace screenshots | `auto` | Where trace screenshots are read from: `auto`, `resources` or `screencast` |
+| `tests.concurrency` | Tests at once | 1 | Test commands at once, across the whole window (1–8) |
+| `tests.idleTimeout` | Idle timeout | 300 | Seconds of silence before a run is stopped (30–3600) |
+| `tests.coverage` | Project e2e coverage | — | lcov file the test command writes, relative to the working directory |
+| `tests.services` | Services | — | The repository's services — see [Services](#services) |
+
+Concurrency defaults to 1 on purpose: parallel tests that share a database corrupt each other.
+Raise it only when your tests are isolated.
+
+## Services
+
+A repository often holds several services — `services/orders`, `services/billing`, `web/` —
+each with its own end-to-end tests that need part of the stack running. Declare them once, then
+assign test cases to them.
+
+### Declare a service
+
+1. Open the settings (gear icon) → **Tests** tab → **Services** → **Add service…**.
+2. Click **Browse…** and pick the service's folder. BFAST proposes an **Id** and a **Name**
+   from the folder; change them if you like. The id is lower-case letters, digits and dashes.
+3. Optionally open **Unit tests** and fill in the command and the lcov file it writes.
+4. Open **E2E tests** and fill in:
+   - **Suite command** — runs the service's whole e2e suite;
+   - **Test case command** — runs **one** test case, with `{{id}}`, `{{key}}` and `{{folder}}`
+     substituted exactly as in the test command;
+   - **Coverage** — the lcov file the suite writes, relative to the service folder;
+   - **Compose services** — tick the services from your compose file that must be up first.
+     BFAST reads the list with `docker compose config --services` over the compose files on the
+     **Environments** tab. Without docker it becomes a text field: type the names, comma
+     separated.
+5. **Save**.
+
+```json title=".vscode/bfast.json"
+{
+  "tests": {
+    "command": "pnpm e2e --grep {{id}}",
+    "coverage": "coverage/e2e/lcov.info",
+    "services": [
+      {
+        "id": "orders",
+        "name": "Orders",
+        "folder": "services/orders",
+        "unit": { "command": "npm test -- --coverage", "coverage": "coverage/lcov.info" },
+        "e2e": {
+          "command": "npm run e2e",
+          "testCommand": "npm run e2e -- --grep {{id}}",
+          "coverage": "coverage/e2e/lcov.info",
+          "compose": ["orders", "postgres"]
+        }
+      }
+    ]
+  }
+}
+```
+
+### Assign a test case to a service
+
+- Right-click a test case → **Set Service…** → pick the service, or **None** to run it with the
+  project test command again.
+- Or open the test case's board → **Tests** tab → the **Service** picker beside **Run tests**.
+
+The ticket's `metadata.yaml` gets `service: orders` and its history a `changed — service` entry.
+
+### What a run does
+
+| The test case | Runs |
+|---|---|
+| has no service | the project **Test command**, in the working directory — as before |
+| is assigned to a service with a test case command | that command, in the service's folder |
+| is assigned to a service with no test case command, or one no longer in the settings | nothing — the run records an error saying why |
+
+A test case assigned to a service never falls back to the project command silently.
+
+Before a service's test cases run, BFAST brings its compose services up in the **Master
+environment** — `docker compose up -d --wait orders postgres` — once per run, and leaves them
+running for the next one. Create the Master environment first: **Environments** →
+**Create Master Environment**. If the services do not come up, that service's test cases are
+recorded as errors with docker's reason; the other test cases still run.
+
+Every test command — the project's and every service's — also receives the Master
+environment's port variables (`ORDERS_PORT`, …) and `BFAST_PROJECT_NAME`, so a test can find
+the stack without hard-coding ports.
+
+You only need a project test command if some test cases have no service. A tracker whose test
+cases all run as services can leave it empty.
+
+### Set it up from an agent
+
+With the [MCP server](./mcp-server.mdx#changing-settings-over-mcp) on and its **settings**
+function ticked, a coding agent can do all of the above for you — read the compose services,
+declare each service and assign test cases — through the same checks as this form:
+
+```bash
+claude -p "Using the bfast MCP server, list the compose services, add a service 'orders' for \
+services/orders whose e2e test case command is 'npm run e2e -- --grep {{id}}' and needs orders \
+and postgres, then assign TC-1.2.1.1 to it." \
+  --mcp-config .mcp.json \
+  --allowedTools "mcp__bfast__list_compose_services mcp__bfast__set_test_service mcp__bfast__set_test_case_service"
+```
+
+Assigning a test case (`set_test_case_service`) belongs to the **Run tests** function, so an
+agent that may run tests may also choose which service runs them.
+
+:::note[Coming next]
+Running a service's whole unit or e2e suite from the board, and merging every coverage file into
+one project figure (also sent to SonarQube), are not available yet. The coverage fields can
+already be filled in.
+:::
+
+## A complete example
+
+```json title=".vscode/bfast.json"
+{
+  "trackerFolder": ".tracker",
+  "userName": "Alex",
+  "tests": {
+    "command": "make e2e ARGS=\"--grep '{{id}} '\" E2E_VIDEO=on E2E_TRACE=on",
+    "evidence": "e2e/evidence/**/{{id}}.*",
+    "concurrency": 1,
+    "idleTimeout": 600
+  }
+}
+```
+
+**Run Tests** on `AC-2.1.1`, which has two test cases, runs the command for `TC-2.1.1.1` and
+then for `TC-2.1.1.2`, copies each one's video and trace into its run folder, and sets each
+test case `done` or `blocked`.

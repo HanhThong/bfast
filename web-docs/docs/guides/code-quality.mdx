@@ -1,0 +1,262 @@
+---
+title: Code quality
+---
+
+# Code quality
+
+The **Code Quality** section scans your code with [SonarQube](https://www.sonarsource.com/products/sonarqube/)
+and shows the quality gate, the measures and the issues in an editor tab. When the scan was
+started from a ticket's environment, the verdict is recorded in that ticket's history.
+
+![The scan results tab: quality gate Passed, the measures, and one issue with its file and rule](/img/screens/scan-results.png)
+
+You can use a SonarQube that **BFAST deploys for you**, or **one you already have**.
+
+## Step by step: deploy SonarQube and scan a story
+
+This path needs only Docker. On Linux, SonarQube's Elasticsearch also needs
+`vm.max_map_count` of at least 262144; BFAST checks before deploying and shows the exact
+`sysctl` command if it is too low.
+
+### 1. Check the Scan settings
+
+1. Open the BFAST settings (gear in the **Tickets** title bar) → **Scan**.
+2. Leave **Server** on *BFAST deploys it (Docker Compose)* and **Scanner** on *Official
+   scanner image (nothing to install)*.
+3. Optional: set a **Project key** (here `acme-shop`); empty means the workspace folder's
+   name. A `sonar-project.properties` in the scanned folder wins over both.
+4. Optional: add **exclusions** such as `**/node_modules/**`.
+5. Click **Save**.
+
+![Settings → Scan: BFAST deploys the server, project key acme-shop, an exclusion](/img/screens/scan-settings.png)
+
+No token or password is ever typed into this form: `bfast.json` is committed to git.
+
+### 2. Deploy the server
+
+Before anything is deployed, the section shows the server as **Not deployed** and the
+credentials as **missing**:
+
+![Code Quality: SonarQube Not deployed, Credentials missing](/img/screens/scan-not-deployed.png)
+
+Hover the **Code Quality** title bar and click **+** (**Deploy Scan Server**), or run
+**BFAST: Deploy Scan Server** from the palette. A notification says *setting up the scan
+server…* and the row moves through `Starting…` and `Provisioning…`:
+
+![SonarQube Starting… on port 9000 with the "setting up the scan server" notification](/img/screens/scan-deploying.png)
+
+That one gesture allocates a port (from 9000), starts SonarQube and its database with Docker
+Compose, waits until the API answers, replaces the factory `admin` password with a generated
+one and creates the tokens BFAST needs. There is nothing to copy or paste.
+
+The first start pulls about 1 GB of images and can take several minutes. Every step is
+written to the **BFAST Code Quality** output channel:
+
+![The BFAST Code Quality output channel: checking the credentials, setting the admin password, creating the tokens](/img/screens/scan-output-channel.png)
+
+When it is done, the server is **Running**, the endpoint row shows its URL and the
+credentials are **ready**:
+
+![SonarQube Running on :9000, the endpoint http://localhost:9000, Credentials ready](/img/screens/scan-server-ready.png)
+
+### 3. Scan the story's environment
+
+A scan analyses a folder, and a ticket owns no folder — its
+[environment](./environments.mdx) does. So:
+
+1. Create the story's environment if it has none (right-click the story → **Create
+   Environment**). It does not need to be running.
+2. In **Environments**, right-click the environment → **Run Scan**.
+3. A **Scan — ST-2** tab opens and says what it will analyse: the project key and where it
+   came from, and the worktree folder.
+4. Click **Scan**.
+
+![The scan tab before the first run: project acme-shop, the worktree path, Scan and Ready](/img/screens/scan-tab-start.png)
+
+The tab streams the **Activity** while it runs, and **Stop** cancels. The first scan also
+downloads the scanner image (about 500 MB, once):
+
+![The scan tab while scanning: Stop, Scanning, and the activity log pulling the scanner image](/img/screens/scan-tab-running.png)
+
+### 4. Read the results
+
+When the server has processed the report, the tab shows:
+
+- the **Quality gate** — *Passed*, *Warn*, *Failed* or no gate;
+- the **Measures** — bugs, vulnerabilities, security hotspots, code smells, coverage,
+  duplication, lines;
+- the **Issues**, each with its severity, its file and line (click to open it) and its rule;
+- **Open in SonarQube** for the full dashboard;
+- **Scan again** and **Reset**.
+
+![Scan results: Passed, the measures row, one MEDIUM issue in public/index.html line 2](/img/screens/scan-results.png)
+
+A scan of an environment's worktree has no git history to read, so the tab warns that
+SonarQube's "new code" measures are not meaningful.
+
+### 5. Find it in the ticket's history
+
+The verdict is recorded on the ticket the environment belongs to, as a `scanned` entry with
+the counts and a dashboard link. The ticket's status does not change.
+
+![ST-1.2's History tab with a "scanned" entry: quality gate OK, the counts and the dashboard URL](/img/screens/scan-history-entry.png)
+
+### 6. Scan the whole workspace
+
+Click the **search** icon in the Code Quality title bar (**Scan Workspace**) to scan the
+workspace folder — or `scan.cwd` — with no ticket. The same tab opens, titled for the
+workspace; nothing is written to any history.
+
+## Option B: use an existing SonarQube
+
+1. Open **Settings → Scan** and set **Server** to *An existing server or SonarQube Cloud*.
+2. Fill in the **Host URL** field that appears. For SonarQube Cloud, also fill in the
+   **Organization**.
+3. Click **Save**.
+4. Run **BFAST: Set SonarQube Token** and paste a **user token** with *Execute Analysis* and
+   *Browse* on the project. An analysis-only token cannot read results back.
+5. Run a scan. A wrong URL ends `unreachable` and a wrong token `unauthorized`, each with a
+   message saying so.
+
+```json title=".vscode/bfast.json"
+{
+  "scan": {
+    "mode": "external",
+    "hostUrl": "https://sonarcloud.io",
+    "organization": "acme",
+    "projectKey": "acme_my-app"
+  }
+}
+```
+
+## Run a scan
+
+| Gesture | Scans | Recorded on |
+|---|---|---|
+| Right-click an **environment** → **Run Scan** | That environment's worktree | The environment's ticket |
+| Right-click the **Master** environment → **Run Scan** | The workspace | Nothing |
+| **Scan Workspace** (search icon) in the Code Quality title bar | The workspace (or `scan.cwd`) | Nothing — there is no ticket |
+
+The tab opens ready, and **Scan** starts it. If the server is not deployed or not running yet,
+the scan sets it up first.
+
+One scan runs at a time per workspace.
+
+:::info[Why scans start from an environment]
+A ticket owns no folder. An environment owns the worktree of the branch the work is on, so
+that is what gets scanned. To scan a ticket's code, [create its environment](./environments.mdx)
+first. The stack does not need to be running.
+:::
+
+## Outcomes
+
+**A scan never changes a ticket's status.** It writes one history entry, and only for the
+outcomes that are a verdict.
+
+| Outcome | When | History entry |
+|---|---|---|
+| `passed` | the quality gate is OK | yes — the gate and the counts, with a dashboard link |
+| `warn` | the gate is WARN | yes |
+| `no-gate` | no quality gate is attached to the project | yes — the open issue count |
+| `failed` | the gate is ERROR | yes — the failing conditions |
+| `ce-failed` | the server failed to process the report | no |
+| `scanner-failed` | the scanner exited with an error | no |
+| `timeout` | the scanner or the server went quiet | no |
+| `unreachable` | the server never answered, or Docker is missing | no |
+| `unauthorized` | a call was refused (401 or 403) | no |
+| `cancelled` | you pressed Stop | no |
+
+Errors offer **Show Log**. An `unauthorized` error offers **Re-provision** or **Set token**.
+
+## The Code Quality section
+
+The title bar has **+** (**Deploy Scan Server**), the search icon (**Scan Workspace**) and
+**Refresh**. The section has one root row, the server, which expands into:
+
+![The Code Quality section with the server, endpoint, credentials and a recent run](/img/screens/scan-section.png)
+
+| Row | Shows | Click |
+|---|---|---|
+| **Server** | Status and port | Actions are on the right-click menu; Stop is also inline |
+| **Endpoint** | The server's URL | Opens it |
+| **Credentials** | `ready` or `missing` | Sets a token; the copy button copies a credential |
+| One row per **recent run** | What was scanned and the outcome — `acme-shop passed` | Reopens that run's results |
+
+### Server actions
+
+Right-click the server:
+
+![The server context menu: Stop, Re-provision, Scan Workspace, Open in Browser, Show admin password, Reveal folder, Remove](/img/screens/scan-server-menu.png)
+
+| Action | Available | Does |
+|---|---|---|
+| **Deploy Scan Server** | nothing deployed | Deploys, starts and provisions |
+| **Start Scan Server** | `stopped`, `error` | Starts and provisions |
+| **Stop Scan Server** | `running` | Stops the containers; data is kept |
+| **Re-provision Scan Credentials** | `running`, external | Re-checks the tokens and creates new ones if needed. Safe at any time. |
+| **Scan Workspace** | any | Scans the workspace folder |
+| **Open Scan Server in Browser** | `running`, external | Opens the SonarQube UI |
+| **Show SonarQube admin password** | deployed | Shows the generated password, to sign in to the UI |
+| **Copy Scan Credential…** | credentials stored | Copies a token or the password |
+| **Clear scan credentials** | credentials stored | Removes them for this workspace |
+| **Reveal Scan Folder in File Explorer** | deployed | Opens BFAST's folder for the server |
+| **Remove Scan Server…** | deployed | Destroys the containers, their volumes, the analysis history **and** the credentials |
+
+An external server shows no Deploy, Start, Stop or Remove: it is not BFAST's to run.
+
+## Which SonarQube project is used
+
+The project key comes from the first of these that exists:
+
+1. `sonar.projectKey` in a `sonar-project.properties` file at the root of the scanned folder,
+2. `scan.projectKey` in the settings,
+3. the workspace folder's name.
+
+The file wins on purpose: a repository that already scans in CI has named its project, and
+BFAST agrees with it. If the project does not exist yet, BFAST creates it before the first
+scan. The tab's **What will be analysed** box says which source was used.
+
+## Scanner options
+
+By default the scan runs the official scanner Docker image. For a build-integrated scanner —
+Maven, Gradle, .NET — set **Scanner** to *A command I write*:
+
+```json
+"scan": {
+  "scannerMode": "command",
+  "command": "mvn -B sonar:sonar -Dsonar.projectKey={{projectKey}}"
+}
+```
+
+| Token | Value |
+|---|---|
+| `{{projectKey}}` | The resolved project key |
+| `{{hostUrl}}` | The server's URL as seen from your machine |
+| `{{folder}}` | The absolute path being scanned. Quote it. |
+| `{{id}}`, `{{key}}` | The ticket the scan was started from; empty for Scan Workspace |
+
+The token is never a placeholder. Your command receives it as the `SONAR_TOKEN` environment
+variable, along with `SONAR_HOST_URL` and `SONAR_PROJECT_KEY`, which SonarQube scanners read
+natively.
+
+## Common settings
+
+| Setting | Form field | Default | Meaning |
+|---|---|---|---|
+| `scan.mode` | Server | `auto` | `auto` or `external` |
+| `scan.projectKey` | Project key | folder name | Used when no `sonar-project.properties` names one |
+| `scan.cwd` | Directory to analyse | workspace root | Folder **Scan Workspace** analyses |
+| `scan.sources` | Sources | `.` | `sonar.sources` |
+| `scan.exclusions` | Exclusions | — | `sonar.exclusions`, comma-separated globs |
+| `scan.properties` | Analysis properties | — | Extra analysis properties |
+| `scan.autoProvision` | Generate credentials automatically | on | Off if you manage the admin password and tokens yourself |
+| `scan.idleTimeout` | Idle timeout | 600 | Seconds of silence before a scan or a boot is stopped |
+
+The full list is in the [settings reference](../reference/settings.mdx#scan).
+
+## Limitations
+
+- **SonarQube Community Edition analyses one branch.** Every scan — from every ticket and
+  every worktree — overwrites the same project. The history entry on the ticket is the record
+  of what was measured and when.
+- **Remove deletes the analysis history.** It asks first.

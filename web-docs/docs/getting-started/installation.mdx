@@ -1,0 +1,78 @@
+---
+title: Installation
+---
+
+# Installation
+
+## Requirements
+
+BFAST itself needs only VS Code. Each optional feature needs the tool it drives.
+
+| For | You need |
+|---|---|
+| BFAST | VS Code **1.134** or newer |
+| AI assistant and Generate | The [`claude` CLI](https://claude.com/claude-code) on your `PATH` (the default provider), **or** an Anthropic API key / Claude Code OAuth token for the Agent SDK provider |
+| Implement | The [Claude Code VS Code extension](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code), **or** the `claude` CLI on your terminal's `PATH` |
+| Environments | `git` and `docker` with Compose **v2** (the `docker compose` plugin, not the old `docker-compose` binary) |
+| Code Quality | `docker` with Compose v2 for a SonarQube deployed by BFAST. An external SonarQube needs neither. |
+| Run Tests | Whatever your own test command needs |
+
+:::note[Linux and SonarQube]
+SonarQube's Elasticsearch needs the kernel setting `vm.max_map_count` raised. BFAST checks
+before deploying and shows the exact command to run.
+:::
+
+## Install from a VSIX file
+
+BFAST is distributed as a `.vsix` package.
+
+1. Get `bfast-<version>.vsix` from the assets of the latest
+   [release](https://github.com/HanhThong/bfast/releases/latest), or
+   [build it yourself](#build-from-source). Each release also lists a `.sha256` file to check the
+   download against (`sha256sum -c bfast-<version>.vsix.sha256`).
+2. In VS Code, open the **Extensions** view (`Ctrl+Shift+X` / `Cmd+Shift+X`).
+3. Click **…** at the top of the view and choose **Install from VSIX…**.
+4. Pick the `.vsix` file and confirm.
+5. If VS Code asks, reload the window (**Developer: Reload Window** in the command palette).
+
+Or from a terminal:
+
+```bash
+code --install-extension bfast-0.1.0.vsix
+```
+
+## Check that it works
+
+1. Open any folder (**File → Open Folder…**).
+2. Look for the **B** icon in the activity bar and click it.
+
+You should see the BFAST side bar with its three sections — **Tickets**, **Environments** and
+**Code Quality** — each offering **Init settings**:
+
+![The B icon in the activity bar and the BFAST side bar before setup](/img/screens/start-welcome.png)
+
+If the icon is missing, check **Extensions** for *BFAST* and that it is enabled, and look in
+**Output → Log (Extension Host)** for an activation error.
+
+## Build from source
+
+```bash
+git clone <repository url>
+cd bfast
+npm install
+npm run package   # production build: compiled host + minified webview
+npm run vsix      # produces bfast-<version>.vsix
+```
+
+To run the extension without packaging it, open the repository in VS Code and press **F5**
+("Run Extension"). A second VS Code window opens with BFAST loaded.
+
+## Remote windows
+
+BFAST works in Remote-SSH, WSL and dev container windows. It runs where the workspace is, so
+`git`, `docker`, `claude` and your test command must be installed on the **remote** machine.
+Ports of a running environment are forwarded to your machine automatically.
+
+## Next step
+
+[Set up your first workspace →](./quick-start.mdx)

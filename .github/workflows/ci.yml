@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  # A change to the documentation site alone is docs.yml's, not this suite's.
+  push:
+    branches: [master]
+    paths-ignore: ['web-docs/**', '.github/workflows/docs*.yml']
+  pull_request:
+    paths-ignore: ['web-docs/**', '.github/workflows/docs*.yml']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Compile, type-check the webview, both bundle guards and lint (`pretest`),
+      # then every suite in a real VS Code. `.vscode-test.mjs` picks Chromium's
+      # headless platform when there is no display, so no xvfb is needed.
+      - run: npm test

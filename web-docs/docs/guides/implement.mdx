@@ -1,0 +1,175 @@
+---
+title: Implement
+---
+
+# Implement
+
+**Implement…** hands a ticket to a coding agent. BFAST builds a prompt for the ticket, writes
+it to a file, and gives the agent one sentence pointing at that file — **filled in, not
+sent**. You read it and press Enter.
+
+BFAST runs nothing itself, and writes nothing into the ticket: no history entry, no status
+change.
+
+| `implement.agent` | What opens |
+|---|---|
+| `claude-code` (default) | A new Claude Code tab with the sentence in its input |
+| `claude-code-cli` | A terminal named after the ticket, with `claude "<sentence>"` typed and waiting for Enter |
+
+## Before you start
+
+You need one of:
+
+- the [Claude Code extension](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code)
+  installed in VS Code, for `claude-code`; or
+- the `claude` CLI on your terminal's `PATH`, for `claude-code-cli`. Check it in a VS Code
+  terminal with `claude --version`.
+
+Set up [your workspace](../getting-started/quick-start.mdx) first; Implement needs a tracker.
+
+## Step 1 — Choose the coding agent
+
+1. Open **BFAST: Open Settings** (or the gear in the Tickets title bar).
+2. Select the **Implement** tab.
+3. In **Coding agent**, pick **Claude Code** or **Claude Code CLI**. The hint under the list
+   says what that agent will do. Entries marked *(coming soon)* — Codex, Codex CLI, OpenCode,
+   OpenCode CLI, Cursor, GitHub Copilot — cannot be picked yet.
+4. Click **Save**. The form says **Settings saved.** and stays open.
+
+![The Implement tab of the settings form, with Claude Code CLI selected and the five prompt templates listed](/img/screens/implement-settings.png)
+
+The setting is written to `.vscode/bfast.json`:
+
+```json title=".vscode/bfast.json"
+{
+  "implement": { "agent": "claude-code-cli" }
+}
+```
+
+## Step 2 — Hand a ticket over
+
+1. In the **Tickets** view, right-click the ticket — any type: epic, story, acceptance
+   criterion or test case.
+2. Choose **Implement…**.
+
+![The right-click menu of story ST-1.2, with Implement… near the bottom](/img/screens/implement-context-menu.png)
+
+With **Claude Code CLI**, a terminal named **Claude Code — ST-1.2** opens in the panel, with
+the command already typed:
+
+![A terminal named "Claude Code — ST-1.2" with claude "Your task is in .bfast/implement/prompts/ST-1.2.md. Read that file first, then do what it says." typed and not yet run](/img/screens/implement-cli-terminal.png)
+
+3. Read the line, then press **Enter** to start Claude Code. Nothing has run until you do.
+
+With **Claude Code**, a new Claude Code tab opens instead, with the same sentence in its input
+box — press Enter there.
+
+The sentence is always the same shape, whatever the agent:
+
+```text
+Your task is in .bfast/implement/prompts/ST-1.2.md. Read that file first, then do what it says.
+```
+
+## Step 3 — Check what the agent will read
+
+The prompt itself is in the file the sentence names. Open it to see exactly what the agent
+gets — press `Ctrl+P` and type `prompts/ST-1.2.md`:
+
+![The rendered prompt for ST-1.2: the story's description inline, then its criteria, test cases and design documents listed by path](/img/screens/implement-prompt-file.png)
+
+The ticket's own description is included in full. Everything else is given **by path**, since
+a coding agent has file tools and a path is always current:
+
+- the ticket's ancestors, epic first,
+- its children, two levels down,
+- the design documents on the ticket and on its ancestors,
+- your test command,
+- the shared working rules.
+
+The file is rewritten on every click, so it always matches the ticket as it is now.
+
+## Customise the prompts
+
+There is one template per ticket type, plus one rules file. They live in your workspace and
+are yours to edit.
+
+```text
+.bfast/implement/
+  epic.md
+  story.md
+  acceptance-criterion.md
+  test-case.md
+  rules.md               the working rules every template includes
+  prompts/
+    ST-1.2.md            the last rendered prompt per ticket
+```
+
+1. Open **Settings → Implement**.
+2. Under **Prompts**, click **Open** next to the template you want — **Working rules**,
+   **Epic**, **Story**, **Acceptance criterion** or **Test case**.
+3. Edit the file in the editor and save it.
+4. Right-click a ticket → **Implement…** again. A template is read at the moment you click,
+   so the change applies immediately.
+
+![The story template open in the editor, with placeholders for the id, description and children](/img/screens/implement-template.png)
+
+The frontmatter's `types` is optional — the ticket type is inferred from the file name.
+Everything after the frontmatter is the prompt.
+
+### Placeholders
+
+| Token | Value |
+|---|---|
+| `{{id}}` | The full ticket id — `ST-1.2` |
+| `{{key}}` | The last segment — `ST-2`. Not unique. |
+| `{{title}}` | The ticket's title |
+| `{{type}}` | `epic`, `story`, `acceptance criterion` or `test case` |
+| `{{status}}` | The ticket's status |
+| `{{folder}}` | The ticket's folder, relative to the workspace |
+| `{{file}}` | The description file, relative to the workspace |
+| `{{description}}` | The description, verbatim; `(empty)` when there is none |
+| `{{ancestors}}` | The tickets above, one line each with its path |
+| `{{children}}` | The subtree below, two levels deep |
+| `{{designs}}` | Design documents on the ticket and its ancestors |
+| `{{testCommand}}` | `tests.command` — filled in for a test case, as configured otherwise |
+| `{{tracker}}` | The tracker folder — `.tracker` |
+| `{{rules}}` | The body of `rules.md` |
+
+An unknown `{{token}}` is left in the prompt untouched.
+
+### The working rules
+
+`rules.md` says how to approach **any** ticket: think before coding, keep it simple, make
+surgical changes, work toward a verifiable goal. Every shipped template ends with it. Edit the
+rules once and every prompt follows.
+
+### Seeding and restoring
+
+The five files are copied into `.bfast/implement/` the first time they are needed, and only if
+the folder has never existed. If you delete one, BFAST uses the shipped version silently.
+**Open** in the settings form restores the file it opens. Delete the whole folder to re-seed
+everything.
+
+`prompts/` is output. It is overwritten on every click and never cleaned up. Commit it or
+gitignore it.
+
+## When it cannot hand over
+
+| Problem | You get |
+|---|---|
+| The Claude Code extension is not installed | An error with **Show in Marketplace** |
+| The `claude` CLI cannot be run | An error saying so; install the CLI or fix your `PATH` |
+| The agent is still *coming soon* | An error with **Open Settings** |
+| The workspace is not set up | An error with **Open Settings** |
+| The prompt was built but the handoff failed | An error with **Copy Prompt**, so you can paste it yourself |
+
+![The error shown when the Claude Code extension is missing, with a Show in Marketplace button](/img/screens/implement-not-installed.png)
+
+## Tips
+
+- Keep templates **agent-neutral**. Say what to do with the ticket, not how a particular agent
+  works, so changing `implement.agent` does not mean rewriting four prompts.
+- Use `{{tracker}}` to tell the agent what not to touch: "do not edit anything under
+  `{{tracker}}`".
+- Combine with the [MCP server](./mcp-server.mdx) so the agent can update the ticket's status
+  and start test runs itself.

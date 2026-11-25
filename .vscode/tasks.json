@@ -1,0 +1,68 @@
+// See https://go.microsoft.com/fwlink/?LinkId=733558
+// for the documentation about the tasks.json format
+// The "watch" task is only a wrapper: the two watchers it depends on are the
+// background tasks, each with its own problem matcher.
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "watch",
+			"dependsOn": [
+				"npm: watch:tsc",
+				"npm: watch:web"
+			],
+			"dependsOrder": "parallel",
+			"presentation": {
+				"reveal": "never"
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "npm: watch:tsc",
+			"type": "npm",
+			"script": "watch:tsc",
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
+			"group": "build",
+			"presentation": {
+				"group": "watch",
+				"reveal": "never"
+			}
+		},
+		{
+			"label": "npm: watch:web",
+			"type": "npm",
+			"script": "watch:web",
+			"isBackground": true,
+			"group": "build",
+			"presentation": {
+				"group": "watch",
+				"reveal": "never"
+			},
+			"problemMatcher": {
+				"owner": "typescript",
+				"fileLocation": "absolute",
+				"pattern": [
+					{
+						"regexp": "^✘ \\[ERROR\\] (.+)$",
+						"message": 1
+					},
+					{
+						"regexp": "^\\s+(.+):(\\d+):(\\d+):$",
+						"file": 1,
+						"line": 2,
+						"column": 3
+					}
+				],
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "^\\[watch\\] build started$",
+					"endsPattern": "^\\[watch\\] build finished$"
+				}
+			}
+		}
+	]
+}

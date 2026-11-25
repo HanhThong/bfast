@@ -1,0 +1,19 @@
+// The documentation site as a Cloudflare Worker that serves static assets only: no code runs, the
+// files `npm run build` writes into build/ are served as they are. The Docs workflow deploys it
+// (.github/workflows/docs.yml); RELEASING.md is the guide.
+{
+  // The Worker on Cloudflare. The workflow passes --name from the repository variable
+  // CLOUDFLARE_WORKER_NAME when it is set, so this is only the default.
+  "name": "bfast",
+  "compatibility_date": "2026-11-01",
+  // The custom domain (bfast.hanhthong.me) is attached to the Worker in the dashboard and is not
+  // declared here: a deploy leaves a domain it does not declare alone, and declaring one would need
+  // a token with DNS permissions on the zone too.
+  "assets": {
+    "directory": "./build",
+    // Docusaurus writes every page as <path>/index.html: /docs/intro/ serves it, /docs/intro redirects there.
+    "html_handling": "auto-trailing-slash",
+    // Docusaurus's own "page not found", styled like the rest of the site, with a 404 status.
+    "not_found_handling": "404-page"
+  }
+}

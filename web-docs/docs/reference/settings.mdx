@@ -1,0 +1,228 @@
+---
+title: Settings
+---
+
+# Settings reference
+
+All settings are per workspace and live in **`.vscode/bfast.json`**. They are not VS Code user
+settings. The file holds no secrets and is meant to be committed.
+
+## Open the form
+
+1. Click the **B** icon in the activity bar.
+2. Hover the **Tickets** header and click the gear (**Open Settings**) — or run
+   **BFAST: Open Settings** from the command palette. In a workspace that is not set up yet,
+   click **Init settings** instead.
+3. The **BFAST Settings** tab opens. Its subtitle says where it saves: *Saved in
+   .vscode/bfast.json in this workspace*, or *Not configured yet* before the first save.
+4. Pick a tab, change what you need, and click **Save** at the bottom.
+
+You can also edit the file by hand; click **Refresh Tickets** afterwards to apply it.
+
+## How the file behaves
+
+- **Reading is forgiving.** An unknown, malformed or out-of-range value is ignored and the
+  default applies. A hand-edited file never fails to load.
+- **Writing is strict.** The form refuses to save an invalid value and says which.
+- **Defaults are not written.** A block with nothing set is left out, so a workspace that does
+  not use a feature keeps a two-line file.
+- **Unknown keys are dropped** when the form saves.
+
+## The settings form
+
+| Tab | Configures |
+|---|---|
+| **General** | Tracker folder, your name |
+| **AI assistant** | Provider, default model, agents and skills, language, limits |
+| **Design** | Design styles and the roles that draw them (stored as skill files, not in `bfast.json`) |
+| **Environments** | Ports, compose files, worktrees folder |
+| **Tests** | Test command, evidence, limits |
+| **Scan** | SonarQube mode, project, scanner |
+| **Implement** | Coding agent, prompt templates |
+| **MCP server** | On/off, port, reach, functions, live status, Connect a tool |
+
+**Save** writes the whole file — every tab, not only the one on screen — and leaves the tab
+open with *Settings saved.* under the form. **Cancel** closes it. Switching tabs never discards
+what you typed on another tab.
+
+The BFAST version you are running — *BFAST v0.1.0* — is shown on the left of **Cancel** and
+**Save**. Quote it when you report a problem.
+
+![The settings form after saving: "Settings saved." under the General tab](/img/screens/start-settings-saved.png)
+
+## General
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `trackerFolder` | string | `.tracker` | Where tickets live. Relative to the workspace; may not be absolute or contain `..`. |
+| `userName` | string | — | The author written into ticket history. The form pre-fills your operating-system user name. |
+
+![General tab: Tracker store folder and Your name](/img/screens/settings-general.png)
+
+## `ai`
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `provider` | `claude-cli` \| `claude-agent-sdk` | `claude-cli` | How the assistant is run |
+| `model` | string | provider's default | An alias (`opus`, `sonnet`, `haiku`, `best`, …) or a model id. One token, no spaces. |
+| `language` | ISO 639-1 code | — | Language descriptions are written in, e.g. `vi`, `ja` |
+| `maxTurns` | number | `12` | Steps a run may take. 1–50. |
+| `idleTimeout` | number | `180` | Seconds of silence before a run is stopped. 30–1800. |
+| `concurrency` | number | `3` | Agents at once in a generate batch, window-wide. 1–8. |
+| `executablePath` | string | — | Path to the `claude` executable |
+
+Credentials are not settings. Use **BFAST: Set AI API key** or **BFAST: Set AI OAuth token**.
+
+The tab also lists every **agent** in `.bfast/agents/` with its skills — **Edit role**, **Edit**
+per skill, **New skill…** and **New agent…** — which are files, not `bfast.json` keys. See
+[Agents and skills](../guides/agents-and-skills.mdx).
+
+![AI assistant tab: Provider, Default model, then the Agents list starting with Business Analyst and its skills](/img/screens/settings-ai.png)
+
+## Design
+
+The **Design** tab writes nothing to `bfast.json`. It lists the design styles — the three
+built-in ones are Entity-Relationship Diagram (`ERD`), Sequence Diagram (`SEQ`) and Low Level
+Design (`LLD`) — with the roles that hold each style's skill, and buttons to open the **Skill**
+and its **Expected output**, **Add to a role…** and **New style…**. See
+[Design documents](../guides/design-documents.mdx).
+
+![Design tab: the three built-in styles and the roles that draw them](/img/screens/settings-design.png)
+
+## `environments`
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `provider` | `docker-compose` \| `k8s` | `docker-compose` | The backend. `k8s` is a stub. |
+| `worktreesFolder` | string | `<os temp>/bfast-worktrees` | Parent folder for worktrees. Absolute or `~`-relative, outside the workspace. |
+| `portRangeStart` | number | `20000` | 1024–65535 |
+| `portRangeEnd` | number | `20999` | 1024–65535, not below the start |
+| `portVariables` | string[] | `[]` | Variable names your stack reads; one port is allocated per name. May not start with `BFAST_`. |
+| `mainPort` | string | first of `portVariables` | The port a developer opens |
+| `composeFile` | string | `docker-compose.yml` | Base compose file, relative to the worktree |
+| `composeOverrides` | string[] | `[]` | Extra compose files, layered in order |
+| `logTail` | number | `1000` | Lines of history a container log tab starts with. 0–100000. |
+
+![Environments tab: Provider, Worktrees folder, Port variables, Main port, Port range, Log history](/img/screens/settings-environments.png)
+
+See [Environments](../guides/environments.mdx) and
+[The Docker Compose contract](../guides/compose-contract.mdx).
+
+## `tests`
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `command` | string | — | Shell line run once per test case. Tokens: `{{id}}`, `{{key}}`, `{{folder}}`. |
+| `cwd` | string | workspace root | Working directory, relative to the workspace |
+| `resultsFolder` | string | `.bfast/test-results` | Where runs are filed. Relative; not inside the tracker. |
+| `evidence` | string | — | Glob, relative to `cwd`, for files to keep with a run. Tokens: `{{id}}`, `{{key}}`. |
+| `evidenceCommand` | string | — | Shell line that opens an evidence file. Token: `{{file}}`, already quoted. |
+| `traceFrames` | `auto` \| `resources` \| `screencast` | `auto` | Where Playwright trace screenshots are read from |
+| `concurrency` | number | `1` | Test commands at once, window-wide. 1–8. |
+| `idleTimeout` | number | `300` | Seconds of silence before a run is stopped. 30–3600. |
+| `coverage` | string | — | lcov file the project command writes, relative to `cwd` |
+| `services` | list | — | The repository's services. Each: `id`, `name`, `folder`, `unit` (`command`, `coverage`), `e2e` (`command`, `testCommand`, `coverage`, `compose`). See [Services](../guides/run-tests.mdx#services). |
+
+![Tests tab: Test command, Working directory, Results folder, Evidence files, Open evidence with, Trace screenshots](/img/screens/settings-tests.png)
+
+See [Run tests](../guides/run-tests.mdx).
+
+## `scan`
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `tool` | `sonarqube` | `sonarqube` | The scan tool |
+| `mode` | `auto` \| `external` | `auto` | BFAST deploys SonarQube, or you point at your own |
+| `hostUrl` | string | — | External only. `http` or `https`; may not contain a user name or password. |
+| `organization` | string | — | SonarQube Cloud only |
+| `projectKey` | string | folder name | Used when no `sonar-project.properties` names one |
+| `cwd` | string | workspace root | Folder **Scan Workspace** analyses |
+| `sources` | string | `.` | `sonar.sources`. Not sent when the properties file sets a layout. |
+| `exclusions` | string | — | `sonar.exclusions` |
+| `properties` | `{key, value}[]` | `[]` | Extra analysis properties. Keys containing `token`, `login`, `password` or `secret` are refused. |
+| `scannerMode` | `docker` \| `command` | `docker` | The official scanner image, or your own shell line |
+| `scannerImage` | string | `sonarsource/sonar-scanner-cli` | Docker mode only |
+| `scannerNetwork` | string | — | Docker mode only. Network the scanner container joins, e.g. `host`. |
+| `command` | string | — | Command mode only. Tokens: `{{projectKey}}`, `{{hostUrl}}`, `{{folder}}`, `{{id}}`, `{{key}}`. |
+| `composeFile` | string | BFAST's own | Auto mode only. A replacement compose file for the server. |
+| `composeOverrides` | string[] | `[]` | Auto mode only |
+| `portRangeStart` | number | `9000` | Port range for the deployed server |
+| `portRangeEnd` | number | `9099` | |
+| `autoProvision` | boolean | `true` | Auto mode only. `false` if you manage the admin password and tokens yourself. |
+| `idleTimeout` | number | `600` | Seconds of silence before a scan or boot is stopped. 60–3600. |
+
+![Scan tab: Tool, Server, Project key, Directory to analyse, Sources and exclusions, Analysis properties, Scanner](/img/screens/settings-scan.png)
+
+Tokens are not settings. Use **BFAST: Set SonarQube Token**. See
+[Code quality](../guides/code-quality.mdx).
+
+## `implement`
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `agent` | string | `claude-code` | `claude-code` or `claude-code-cli`. Also accepted, coming soon: `codex`, `codex-cli`, `opencode`, `opencode-cli`, `cursor`, `github-copilot`. |
+
+The prompt templates are files in `.bfast/implement/`; the tab lists the working rules and the
+four templates, each with an **Open** button. See [Implement](../guides/implement.mdx).
+
+![Implement tab: Coding agent, and the prompt templates with Open buttons](/img/screens/settings-implement.png)
+
+## `mcp`
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `enabled` | boolean | `false` | Whether the server listens |
+| `port` | number | `7711` | 1–65535 |
+| `reach` | `local` \| `network` | `local` | `127.0.0.1` only, or every interface |
+| `functions` | string[] | `["read"]` | Any of `read`, `write`, `designs`, `status`, `tests`, `scan`, `environments`, `settings` |
+
+The tab also shows the server's live **Status** and **Connect a tool**, which copies or saves the
+connection snippet for Claude Code, VS Code or Codex once the server runs.
+
+![MCP server tab: Run the MCP server checkbox, Status: Not running, Connect a tool](/img/screens/settings-mcp.png)
+
+See [MCP server](../guides/mcp-server.mdx).
+
+## A full example
+
+```json title=".vscode/bfast.json"
+{
+  "trackerFolder": ".tracker",
+  "userName": "Alex",
+  "ai": {
+    "model": "opus",
+    "language": "vi",
+    "concurrency": 3
+  },
+  "environments": {
+    "worktreesFolder": "~/bfast-worktrees",
+    "portVariables": ["FRONTEND_PORT", "BACKEND_PORT", "DB_PORT"],
+    "composeOverrides": ["docker-compose.bfast.yml"]
+  },
+  "tests": {
+    "command": "npx playwright test --grep '{{id}} '",
+    "evidence": "test-results/**/{{id}}.*",
+    "idleTimeout": 600
+  },
+  "scan": {
+    "exclusions": "**/node_modules/**,**/dist/**"
+  },
+  "implement": {
+    "agent": "claude-code"
+  },
+  "mcp": {
+    "enabled": true,
+    "functions": ["read", "status", "tests"]
+  }
+}
+```
+
+## Things that are not in this file
+
+| What | Where |
+|---|---|
+| AI credentials, SonarQube tokens and admin password | VS Code secret storage |
+| Agent roles and skills, design styles | `.bfast/agents/` |
+| Implement prompt templates | `.bfast/implement/` |
+| A tab's model pick | That tab only |
+| The deployed SonarQube's port | Remembered per machine |

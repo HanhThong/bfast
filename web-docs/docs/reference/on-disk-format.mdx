@@ -1,0 +1,186 @@
+---
+title: On-disk format
+---
+
+# On-disk format
+
+A BFAST tracker is plain files. This page describes them precisely enough to edit by hand,
+script against, or read without the extension.
+
+## Layout
+
+One folder per ticket, nested by parent.
+
+```text
+.tracker/
+  EP-1-Authentication/
+    Epic.mdx
+    metadata.yaml
+    history.md
+    ERD-1-Account_model.mdx
+    ST-1.2-Sign_in_with_email/
+      Story.mdx
+      metadata.yaml
+      history.md
+      assets/
+        login-screen.png
+      AC-1.2.1-Wrong_password_error/
+        AC.mdx
+        metadata.yaml
+        history.md
+        TC-1.2.1.1-Unknown_email_same_error/
+          TestCase.mdx
+          metadata.yaml
+          history.md
+      TC-1.2.3-Smoke_login/
+```
+
+A new ticket is exactly three files. `assets/` appears with the first image.
+
+| Type | Description file |
+|---|---|
+| Epic | `Epic.mdx` |
+| Story | `Story.mdx` |
+| Acceptance criterion | `AC.mdx` |
+| Test case | `TestCase.mdx` |
+
+## Folder names
+
+`<id>-<Slug>`, at most **40 characters** in total.
+
+- The id is the ticket's full id and is never shortened.
+- The slug is the title with characters that are illegal in file names removed and spaces
+  turned into `_`, cut near a word boundary to fit.
+- The slug is for humans only. The full title is in `metadata.yaml`.
+
+Renaming a ticket changes only the slug.
+
+## Ids
+
+`<PREFIX>-<each ancestor's ordinal>.<its own>`
+
+- Ordinals count per type within a parent.
+- Sub-epics and stories under one epic share a single sequence.
+- **A ticket's parent is decided by where its folder sits**, never by parsing its id. If you
+  move or rename a folder by hand so that its id no longer matches its place, BFAST shows an
+  id-drift warning, uses the place, and corrects the files on the next write.
+
+## `metadata.yaml`
+
+A flat list of `key: value` lines.
+
+```yaml
+id: ST-1.2
+title: Sign in with email
+status: in-progress
+assignee: alex
+createdBy: Alex
+createdAt: 2026-09-01T08:15:00.000Z
+updatedAt: 2026-09-05T10:22:33.123Z
+```
+
+| Key | Meaning |
+|---|---|
+| `id` | The ticket's id |
+| `title` | The full title |
+| `status` | `todo`, `in-progress`, `in-review`, `done` or `blocked` |
+| `assignee` | Optional. Shown on the board. |
+| `service` | Optional, test cases only. The service whose e2e test case command runs it — see [Services](../guides/run-tests.mdx#services). |
+| `createdBy`, `createdAt` | Set once |
+| `updatedAt` | Changes on every edit. BFAST uses it to detect conflicting saves. |
+
+Keys you add yourself are kept when BFAST rewrites the file.
+
+### Links
+
+A [link between two tickets](../guides/tickets.mdx#link-tickets) is stored on **both** tickets,
+each in its own `metadata.yaml`, under its own relation's key:
+
+```yaml
+# ST-1.1/metadata.yaml        # ST-1.2/metadata.yaml
+blocks: ST-1.2, ST-1.3        blockedBy: ST-1.1
+relatesTo: EP-2
+```
+
+| Key | Relation |
+|---|---|
+| `blocks` / `blockedBy` | blocks / is blocked by |
+| `relatesTo` | relates to (the same key on both sides) |
+| `duplicates` / `duplicatedBy` | duplicates / is duplicated by |
+| `clones` / `clonedBy` | clones / is cloned by |
+
+- One key per relation, ids separated by commas or spaces. A key is written only when it holds
+  an id.
+- Hand edits are tolerated: the key's case does not matter, and anything that is not a ticket
+  id is dropped.
+- If you edit by hand, edit both tickets. A link written on one side only shows on that side.
+
+## The description (`.mdx`)
+
+Markdown prose and nothing else — no frontmatter. Images are referenced as `assets/<name>`.
+A fenced block labelled `mermaid` is drawn as a diagram on the board.
+
+## `history.md`
+
+Append-only. One entry per change:
+
+````md
+## 2026-09-05T10:22:33.123Z — Alex — changed
+- field: status
+- from: todo
+- to: in-progress
+
+## 2026-09-05T11:02:10.000Z — Alex — changed
+- field: description
+
+  ```from
+  The old text…
+  ```
+
+  ```to
+  The new text…
+  ```
+
+> Written by the BFAST “Business Analyst” agent — write-story (claude-cli, opus, 6 turns, $0.210).
+````
+
+- The heading is `<ISO timestamp> — <author> — <action>`.
+- Short values are bullets. Long or multi-line values are indented fenced blocks.
+- A line starting with `>` is a comment — usually the provenance of an AI or MCP change.
+
+Typical actions are `created`, `changed`, `commented`, `designed` and `scanned`.
+
+## Design documents
+
+Files in the ticket's folder named `<PREFIX>-<number>-<Slug>.mdx`, such as
+`SEQ-2-Password_reset.mdx`. Each has its own small frontmatter — `title`, `style`, `createdBy`,
+`createdAt`, `updatedAt` — followed by markdown.
+
+## What lives outside the tracker
+
+| Path | Contents |
+|---|---|
+| `.vscode/bfast.json` | [Settings](./settings.mdx) |
+| `.bfast/agents/` | [Agent roles and skills](../guides/agents-and-skills.mdx) |
+| `.bfast/implement/` | [Implement templates and rendered prompts](../guides/implement.mdx) |
+| `.bfast/test-results/<TC id>/<run id>/` | [Test runs](../guides/run-tests.mdx): `run.json`, `output.log`, evidence |
+| `<worktrees folder>/<workspace-slug>/` | [Environment](../guides/environments.mdx) worktrees, outside the repository |
+
+## Editing by hand
+
+You can edit any of these files in a normal editor or change them through git. BFAST watches
+the tracker folder and updates the tree and open boards.
+
+- A ticket with a missing or broken file still loads, with a warning.
+- A folder with no ticket files in it is ignored.
+- Do not edit `history.md` entries; add to the end if you must.
+- To move a subtree to another parent, every folder in it would need a new id. BFAST does not
+  offer this.
+
+## Working with git
+
+- Commit the tracker with the code it describes. A branch then carries its own ticket changes.
+- Merge conflicts in `metadata.yaml` and `.mdx` files are ordinary text conflicts.
+- Two branches that each create "the next" ticket under the same parent produce two folders
+  with the same id. Both remain visible after the merge — the second shown with a rank such as
+  `ST-1.3#2` — until you rename or remove one.

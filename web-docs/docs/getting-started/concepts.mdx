@@ -1,0 +1,111 @@
+---
+title: Core concepts
+---
+
+# Core concepts
+
+## The four ticket types
+
+| Type | Prefix | Holds | What it is |
+|---|---|---|---|
+| Epic | `EP` | sub-epics, stories, test cases | A problem worth solving: goals, non-goals, scope |
+| Story | `ST` | acceptance criteria, test cases | One thing a user wants: "As a … I want … so that …" |
+| Acceptance criterion | `AC` | test cases | Exactly one Given / When / Then |
+| Test case | `TC` | — | One runnable test |
+
+A test case can sit under any ticket except another test case:
+
+- under an **acceptance criterion**, it is the runnable form of that criterion;
+- under a **story**, it covers the story as a whole — a smoke test, or a flow across several
+  of its criteria;
+- under an **epic**, it is a journey across several stories — sign up, then sign in, then
+  reset the password.
+
+An epic can hold **sub-epics** beside its stories, to any depth.
+
+Each type has its own icon in the tree: a rocket for an epic, a book for a story, a checklist
+for a criterion and a flask for a test case. Here is the demo tracker used throughout these
+docs:
+
+![The Acme Shop ticket tree: three epics, stories under Authentication, criteria and test cases below them](/img/screens/tickets-tree-expanded.png)
+
+`TC-3 - Smoke: sign in and out` sits directly under story `ST-2`, and `AC-2 - Lockout after five
+failures` carries the warning *No test case yet*.
+
+## Ids
+
+A ticket's id is its prefix plus the ordinal of every ancestor and its own:
+
+```text
+EP-1            the first epic
+ST-1.2          the second story of epic 1
+AC-1.2.1        the first criterion of that story
+TC-1.2.1.1      the first test case of that criterion
+```
+
+- Ordinals are counted **per type within a parent**, so `AC-1.2.1` and `TC-1.2.1` can both
+  exist under story `ST-1.2`.
+- Sub-epics and stories share **one** sequence under an epic: `EP-1.1`, `ST-1.2`, `ST-1.3`.
+- An id is never reused. Deleting `ST-1.2` leaves a gap.
+- The tree shows only the last segment (`AC-1`), because the indentation already shows the
+  ancestry. Board titles and history use the full id.
+
+## Statuses
+
+Every ticket has one of five statuses. The status sets the colour of the ticket's icon in the
+tree and on its board tab.
+
+| Status | Shown as | Meaning |
+|---|---|---|
+| `todo` | To do | Not started |
+| `in-progress` | In progress | Being worked on |
+| `in-review` | In review | Waiting for review |
+| `done` | Done | Finished — also set by a passing test run on a test case |
+| `blocked` | Blocked | Stuck — also set by a failing test run on a test case |
+
+The first column is what `metadata.yaml` stores; the second is what the **Set Status…** pick and
+the board's status pill show.
+
+## What a ticket is on disk
+
+One folder per ticket. Child tickets are subfolders.
+
+```text
+ST-1.2-Sign_in_with_email/
+  Story.mdx          the description — markdown, prose only
+  metadata.yaml      id, title, status, assignee, author, timestamps
+  history.md         append-only log of every change
+  assets/            images the description references (created on first use)
+  ERD-1-Account_model.mdx     a design document (optional)
+  AC-1.2.1-Wrong_password_error/   a child ticket
+```
+
+You can edit these files in a normal editor, and a `git pull` can change them. BFAST watches
+the tracker folder and refreshes the tree and every open board. See the
+[on-disk format reference](../reference/on-disk-format.mdx) for the details.
+
+## The three sidebar sections
+
+The **B** icon opens a container with three sections.
+
+| Section | Shows |
+|---|---|
+| **Tickets** | The ticket tree, with filter, create and settings buttons |
+| **Environments** | One row per dev environment, with its ports and containers |
+| **Code Quality** | The SonarQube server, its credentials and recent scans |
+
+## The files BFAST adds to a workspace
+
+| Path | What | Commit it? |
+|---|---|---|
+| `.vscode/bfast.json` | All settings | Yes |
+| `.tracker/` (configurable) | The tickets | Yes |
+| `.bfast/agents/` | AI roles and their skills | Yes |
+| `.bfast/implement/` | Prompt templates for Implement | Yes |
+| `.bfast/implement/prompts/` | The last rendered prompt per ticket | Your choice |
+| `.bfast/test-results/` (configurable) | Test runs: output, videos, traces | Your choice |
+
+## Where secrets live
+
+Never in a file. The AI credentials and the SonarQube tokens are stored in VS Code's secret
+storage through commands such as **BFAST: Set AI API key** and **BFAST: Set SonarQube Token**.
